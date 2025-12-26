@@ -19,7 +19,7 @@ dependencies:
   mime: ^2.0.0                          # Used for getting mime type of files
   video_thumbnail: ^0.5.3               # Used for getting thumbnails of the picked video
   video_player: ^2.8.2                  # Used for playing videos
-  intl: ^0.19.0                         # Used for formatting date and time
+  intl: ^0.20.2                       # Used for formatting date and time
   path_provider: ^2.1.2                 # Used for generating output file path
   http:                                 # Used for making HTTP requests - Packages dependency
   cupertino_icons: ^1.0.2               # Used for more icons
