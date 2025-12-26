@@ -15,10 +15,10 @@ dependencies:
     sdk: flutter
   get: ^4.6.6                           # Used for state management and navigation
   ffmpeg_kit_flutter_new: ^4.1.0        # Used for video editing
-  image_picker: ^1.0.4                  # Used for picking images and videos
+  image_picker: ^1.2.0                  # Used for picking images and videos
   mime: ^2.0.0                          # Used for getting mime type of files
-  video_thumbnail: ^0.5.3               # Used for getting thumbnails of the picked video
-  video_player: ^2.8.2                  # Used for playing videos
+  video_thumbnail: ^0.5.6               # Used for getting thumbnails of the picked video
+  video_player: ^2.9.5                  # Used for playing videos
   intl: ^0.20.2                       # Used for formatting date and time
   path_provider: ^2.1.2                 # Used for generating output file path
   http:                                 # Used for making HTTP requests - Packages dependency
@@ -27,10 +27,10 @@ dependencies:
   saver_gallery: ^4.1.0                 # Used for saving the exported videos to the gallery
   percent_indicator: ^4.2.3             # Used for showing progress of video export
   file_picker: ^10.3.7                  # Used for picking audio files.
-  audioplayers: ^5.2.1                  # Used for playing audio files along with the video
+  audioplayers: ^6.5.0                  # Used for playing audio files along with the video
   flex_color_picker: ^3.3.1             # Used for font and background text color picker
   shared_preferences: ^2.2.2            # Used for storing user preferences (theme, language, etc.)
-  url_launcher: ^6.2.4    
+  url_launcher: ^6.3.1    
 
 dev_dependencies:
   flutter_test:
