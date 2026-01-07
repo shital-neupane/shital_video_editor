@@ -74,19 +74,19 @@ class _VideoPickerPageState extends State<VideoPickerPage> {
     
   }
 
-  Future<void> _pickVideoFromGallery(BuildContext context) async {
-    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
-    if (video != null) {
-      _navigateToEditor(context, video.path);
-    }
-  }
+  // Future<void> _pickVideoFromGallery(BuildContext context) async {
+  //   final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+  //   if (video != null) {
+  //     _navigateToEditor(context, video.path);
+  //   }
+  // }
 
-  Future<void> _pickVideoFromCamera(BuildContext context) async {
-    final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
-    if (video != null) {
-      _navigateToEditor(context, video.path);
-    }
-  }
+  // Future<void> _pickVideoFromCamera(BuildContext context) async {
+  //   final XFile? video = await _picker.pickVideo(source: ImageSource.camera);
+  //   if (video != null) {
+  //     _navigateToEditor(context, video.path);
+  //   }
+  // }
 
   void _navigateToEditor(BuildContext context, String videoPath) {
     // Create a basic project with the video path
@@ -96,7 +96,7 @@ class _VideoPickerPageState extends State<VideoPickerPage> {
       // transformations: MediaTransformations(),
     );
 
-    Get.toNamed(Routes.EDITOR, arguments: project);
+    Get.offAndToNamed(Routes.EDITOR, arguments: project);
   }
 
   @override
