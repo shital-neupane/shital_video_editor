@@ -10,12 +10,14 @@ class Project {
   int photoDuration;
   String mediaUrl;
   String thumbnailUrl;
+  String spriteSheetPath;
   MediaTransformations transformations;
 
   Project({
     this.name = 'Video Project',
     required this.mediaUrl,
     this.thumbnailUrl = '',
+    this.spriteSheetPath = '',
     this.userId,
     this.photoDuration = 3,
   })  : projectId = Uuid().v4().replaceAll('-', ''),
@@ -25,10 +27,12 @@ class Project {
   Project.fromJson(Map<String, dynamic> json)
       : projectId = json['projectId'],
         name = json['name'],
-        lastUpdated = DateFormat('yyyy-MM-dd HH:mm:ss').parse(json['lastUpdated'].split('.')[0]),
+        lastUpdated = DateFormat('yyyy-MM-dd HH:mm:ss')
+            .parse(json['lastUpdated'].split('.')[0]),
         mediaUrl = json['mediaUrl'],
         photoDuration = json['photoDuration'],
         thumbnailUrl = json['thumbnailUrl'] ?? '',
+        spriteSheetPath = json['spriteSheetPath'] ?? '',
         transformations = MediaTransformations.fromJson(json);
 
   Map<String, dynamic> toJson() => {
@@ -37,6 +41,7 @@ class Project {
         'lastUpdated': lastUpdated.toString(),
         'mediaUrl': mediaUrl,
         'thumbnailUrl': thumbnailUrl,
+        'spriteSheetPath': spriteSheetPath,
         'photoDuration': photoDuration,
         'transformations': transformations.toJson(),
       };

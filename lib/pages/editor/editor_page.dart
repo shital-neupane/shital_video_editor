@@ -135,34 +135,37 @@ class EditorPage extends GetView<EditorController> {
               child: AspectRatio(
                 aspectRatio: _.videoAspectRatio,
                 child: _.isVideoInitialized
-                    ? Stack(
-                        children: [
-                          VideoPlayer(_.videoController!),
-                          _.isCropped &&
-                                  _.selectedOptions != SelectedOptions.CROP
-                              ? CustomPaint(
-                                  painter: CropPainter(
-                                    x: _.cropX,
-                                    y: _.cropY,
-                                    width: _.cropWidth,
-                                    height: _.cropHeight,
-                                  ),
-                                  child: SizedBox(
-                                    height: _.videoHeight * _.scalingFactor,
-                                    width: _.videoWidth * _.scalingFactor,
-                                  ))
-                              : SizedBox.shrink(),
-                          ..._.nTexts > 0
-                              ? _.texts.map((TextTransformation text) {
-                                  if (text.shouldDisplay(_.msVideoPosition))
-                                    return _getTextOverlay(text);
-                                  return SizedBox.shrink();
-                                }).toList()
-                              : [SizedBox.shrink(), SizedBox.shrink()],
-                          _.selectedOptions == SelectedOptions.CROP
-                              ? CropGrid()
-                              : SizedBox.shrink(),
-                        ],
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(12.0),
+                        child: Stack(
+                          children: [
+                            VideoPlayer(_.videoController!),
+                            _.isCropped &&
+                                    _.selectedOptions != SelectedOptions.CROP
+                                ? CustomPaint(
+                                    painter: CropPainter(
+                                      x: _.cropX,
+                                      y: _.cropY,
+                                      width: _.cropWidth,
+                                      height: _.cropHeight,
+                                    ),
+                                    child: SizedBox(
+                                      height: _.videoHeight * _.scalingFactor,
+                                      width: _.videoWidth * _.scalingFactor,
+                                    ))
+                                : SizedBox.shrink(),
+                            ..._.nTexts > 0
+                                ? _.texts.map((TextTransformation text) {
+                                    if (text.shouldDisplay(_.msVideoPosition))
+                                      return _getTextOverlay(text);
+                                    return SizedBox.shrink();
+                                  }).toList()
+                                : [SizedBox.shrink(), SizedBox.shrink()],
+                            _.selectedOptions == SelectedOptions.CROP
+                                ? CropGrid()
+                                : SizedBox.shrink(),
+                          ],
+                        ),
                       )
                     : SizedBox(),
               ),

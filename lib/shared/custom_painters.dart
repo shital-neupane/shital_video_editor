@@ -14,7 +14,8 @@ class LinePainter extends CustomPainter {
       ..strokeWidth = 2.0;
 
     // Draw a vertical line at the center
-    canvas.drawLine(Offset(size.width / 2, -5), Offset(size.width / 2, size.height), linePaint);
+    canvas.drawLine(Offset(size.width / 2, -5),
+        Offset(size.width / 2, size.height), linePaint);
   }
 
   @override
@@ -41,11 +42,13 @@ class TrimPainter extends CustomPainter {
 
     // Draw the background region that is trimmed out (before start and after end)
     if (startX > 0) {
-      drawRoundedRectangleWithOpacity(canvas, 0.0, startX, Colors.black.withOpacity(0.15), size, true);
+      drawRoundedRectangleWithOpacity(
+          canvas, 0.0, startX, Colors.black.withOpacity(0.15), size, true);
     }
 
     if (endX < size.width) {
-      drawRoundedRectangleWithOpacity(canvas, endX, size.width, Colors.black.withOpacity(0.15), size, false);
+      drawRoundedRectangleWithOpacity(canvas, endX, size.width,
+          Colors.black.withOpacity(0.15), size, false);
     }
 
     // Draw trim start handle only if it's within the visible range
@@ -99,13 +102,14 @@ class TrimPainter extends CustomPainter {
   bool shouldRepaint(covariant CustomPainter oldDelegate) {
     if (oldDelegate is TrimPainter) {
       return msTrimStart != oldDelegate.msTrimStart ||
-             msTrimEnd != oldDelegate.msTrimEnd ||
-             isTrimmingMode != oldDelegate.isTrimmingMode;
+          msTrimEnd != oldDelegate.msTrimEnd ||
+          isTrimmingMode != oldDelegate.isTrimmingMode;
     }
     return true;
   }
 
-  void drawTriangle(Canvas canvas, Offset position, Color color, bool pointingDown) {
+  void drawTriangle(
+      Canvas canvas, Offset position, Color color, bool pointingDown) {
     final path = Path();
     const triangleHeight = 6.0;
 
@@ -130,34 +134,75 @@ class TrimPainter extends CustomPainter {
   }
 
   void drawHandle(Canvas canvas, Offset position, Color color) {
-    // Draw a thick handle that looks like a vertical bar
+    // Draw a symmetric rectangular handle centered on the trim line
+    double handleWidth = 18.0; // 3x the original 6.0
+    double handleHeight = 30.0;
+
+    // Draw white background rectangle centered on position
     Paint handlePaint = Paint()
       ..color = Colors.white
-      ..strokeWidth = 6.0
-      ..strokeCap = StrokeCap.round;
+      ..style = PaintingStyle.fill;
 
-    // Main vertical line handle
-    double handleHeight = 30.0;
-    canvas.drawLine(
-      Offset(position.dx, position.dy - handleHeight/2),
-      Offset(position.dx, position.dy + handleHeight/2),
-      handlePaint,
+    Rect handleRect = Rect.fromLTWH(
+      position.dx - handleWidth / 2,
+      position.dy - handleHeight / 2,
+      handleWidth,
+      handleHeight,
     );
 
-    // Add a colored indicator on top
+    RRect roundedHandle = RRect.fromRectAndRadius(
+      handleRect,
+      Radius.circular(4.0),
+    );
+    canvas.drawRRect(roundedHandle, handlePaint);
+
+    // Add a colored indicator stripe in the center
     Paint indicatorPaint = Paint()
       ..color = color
-      ..strokeWidth = 4.0
-      ..strokeCap = StrokeCap.round;
+      ..style = PaintingStyle.fill;
 
-    canvas.drawLine(
-      Offset(position.dx, position.dy - handleHeight/2 + 5),
-      Offset(position.dx, position.dy + handleHeight/2 - 5),
-      indicatorPaint,
+    Rect indicatorRect = Rect.fromLTWH(
+      position.dx - 2.0,
+      position.dy - handleHeight / 2 + 4,
+      4.0,
+      handleHeight - 8,
     );
+
+    RRect roundedIndicator = RRect.fromRectAndRadius(
+      indicatorRect,
+      Radius.circular(2.0),
+    );
+    canvas.drawRRect(roundedIndicator, indicatorPaint);
+
+    // Draw arrows on both sides to indicate draggable direction
+    Paint arrowPaint = Paint()
+      ..color = color.withOpacity(0.7)
+      ..style = PaintingStyle.fill;
+
+    double arrowSize = 4.0;
+    double gapFromCenter = 4.0; // Gap between arrow and center trim line
+
+    // Left arrow
+    Path leftArrowPath = Path();
+    double leftArrowX = position.dx - gapFromCenter - arrowSize;
+    leftArrowPath.moveTo(leftArrowX, position.dy);
+    leftArrowPath.lineTo(leftArrowX + arrowSize, position.dy - arrowSize);
+    leftArrowPath.lineTo(leftArrowX + arrowSize, position.dy + arrowSize);
+    leftArrowPath.close();
+    canvas.drawPath(leftArrowPath, arrowPaint);
+
+    // Right arrow
+    Path rightArrowPath = Path();
+    double rightArrowX = position.dx + gapFromCenter + arrowSize;
+    rightArrowPath.moveTo(rightArrowX, position.dy);
+    rightArrowPath.lineTo(rightArrowX - arrowSize, position.dy - arrowSize);
+    rightArrowPath.lineTo(rightArrowX - arrowSize, position.dy + arrowSize);
+    rightArrowPath.close();
+    canvas.drawPath(rightArrowPath, arrowPaint);
   }
 
-  void drawRoundedRectangleWithOpacity(Canvas canvas, double start, double end, Color color, Size size, bool isStart) {
+  void drawRoundedRectangleWithOpacity(Canvas canvas, double start, double end,
+      Color color, Size size, bool isStart) {
     final radius = Radius.circular(10.0);
     final rect = RRect.fromRectAndCorners(
       Rect.fromPoints(Offset(start, 0), Offset(end, size.height)),
@@ -216,12 +261,14 @@ class RoundedProgressBarPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
-      ..color = Theme.of(Get.context!).primaryColorLight // Color of the progress bar
+      ..color =
+          Theme.of(Get.context!).primaryColorLight // Color of the progress bar
       ..style = PaintingStyle.fill;
 
     double progressBarHeight = 40.0;
     double borderRadius = progressBarHeight / 4;
-    double progressBarWidth = (msMaxAudioDuration / 1000) * 12.0; // 12 pixels per second
+    double progressBarWidth =
+        (msMaxAudioDuration / 1000) * 12.0; // 12 pixels per second
 
     // Adjust the y-coordinate to position the bars at the bottom of the container
     double startY = size.height - progressBarHeight + 6.0;
@@ -237,7 +284,8 @@ class RoundedProgressBarPainter extends CustomPainter {
     canvas.drawRRect(backgroundBar, Paint()..color = Colors.transparent);
 
     // Draw the progress bar with border
-    double progressWidth = (currentPosition / msMaxAudioDuration) * progressBarWidth;
+    double progressWidth =
+        (currentPosition / msMaxAudioDuration) * progressBarWidth;
     RRect progressBar = RRect.fromLTRBR(
       0,
       startY,
@@ -248,7 +296,8 @@ class RoundedProgressBarPainter extends CustomPainter {
     canvas.drawRRect(progressBar, paint);
 
     Paint borderPaint = Paint()
-      ..color = Theme.of(Get.context!).colorScheme.onBackground // Color of the border
+      ..color =
+          Theme.of(Get.context!).colorScheme.onBackground // Color of the border
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0; // Width of the border
     canvas.drawRRect(backgroundBar, borderPaint);
@@ -256,7 +305,8 @@ class RoundedProgressBarPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant RoundedProgressBarPainter oldDelegate) {
-    return oldDelegate.msMaxAudioDuration != msMaxAudioDuration || oldDelegate.currentPosition != currentPosition;
+    return oldDelegate.msMaxAudioDuration != msMaxAudioDuration ||
+        oldDelegate.currentPosition != currentPosition;
   }
 }
 
@@ -274,8 +324,10 @@ class CropGridPainter extends CustomPainter {
 
     // Draw the grid
     for (int i = 1; i < 3; i++) {
-      canvas.drawLine(Offset(size.width / 3 * i, 0), Offset(size.width / 3 * i, size.height), paint);
-      canvas.drawLine(Offset(0, size.height / 3 * i), Offset(size.width, size.height / 3 * i), paint);
+      canvas.drawLine(Offset(size.width / 3 * i, 0),
+          Offset(size.width / 3 * i, size.height), paint);
+      canvas.drawLine(Offset(0, size.height / 3 * i),
+          Offset(size.width, size.height / 3 * i), paint);
     }
 
     // Draw the border
@@ -296,8 +348,10 @@ class CropGridPainter extends CustomPainter {
       paint.color = Colors.white;
       canvas.drawRect(Rect.fromLTWH(size.width / 2 - 5, -5, 10, 10), paint);
       canvas.drawRect(Rect.fromLTWH(-5, size.height / 2 - 5, 10, 10), paint);
-      canvas.drawRect(Rect.fromLTWH(size.width - 5, size.height / 2 - 5, 10, 10), paint);
-      canvas.drawRect(Rect.fromLTWH(size.width / 2 - 5, size.height - 5, 10, 10), paint);
+      canvas.drawRect(
+          Rect.fromLTWH(size.width - 5, size.height / 2 - 5, 10, 10), paint);
+      canvas.drawRect(
+          Rect.fromLTWH(size.width / 2 - 5, size.height - 5, 10, 10), paint);
     }
   }
 
@@ -313,15 +367,23 @@ class CropPainter extends CustomPainter {
   double width;
   double height;
 
-  CropPainter({required this.x, required this.y, required this.width, required this.height});
+  CropPainter(
+      {required this.x,
+      required this.y,
+      required this.width,
+      required this.height});
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint fillPaint = Paint()..color = Colors.black.withOpacity(0.4);
     canvas.drawRect(Rect.fromLTWH(0, 0, x, size.height), fillPaint); // Left
     canvas.drawRect(Rect.fromLTWH(x, 0, size.width - x, y), fillPaint); // Top
-    canvas.drawRect(Rect.fromLTWH(x + width, y, size.width - (x + width), size.height - y), fillPaint); // Right
-    canvas.drawRect(Rect.fromLTWH(x, y + height, width, size.height - (y + height)), fillPaint); // Bottom
+    canvas.drawRect(
+        Rect.fromLTWH(x + width, y, size.width - (x + width), size.height - y),
+        fillPaint); // Right
+    canvas.drawRect(
+        Rect.fromLTWH(x, y + height, width, size.height - (y + height)),
+        fillPaint); // Bottom
 
     // Draw white border
     Paint borderPaint = Paint()
@@ -338,8 +400,10 @@ class CropPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(x + width - 12, y - 2, 14, 4), borderPaint);
     canvas.drawRect(Rect.fromLTWH(x - 2, y + height - 12, 4, 12), borderPaint);
     canvas.drawRect(Rect.fromLTWH(x - 2, y + height - 2, 14, 4), borderPaint);
-    canvas.drawRect(Rect.fromLTWH(x + width - 2, y + height - 12, 4, 12), borderPaint);
-    canvas.drawRect(Rect.fromLTWH(x + width - 12, y + height - 2, 14, 4), borderPaint);
+    canvas.drawRect(
+        Rect.fromLTWH(x + width - 2, y + height - 12, 4, 12), borderPaint);
+    canvas.drawRect(
+        Rect.fromLTWH(x + width - 12, y + height - 2, 14, 4), borderPaint);
   }
 
   @override

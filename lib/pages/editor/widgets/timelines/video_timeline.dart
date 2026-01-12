@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:shital_video_editor/controllers/editor_controller.dart';
+import 'package:shital_video_editor/services/thumbnail_service.dart';
 import 'package:shital_video_editor/shared/custom_painters.dart';
+import 'package:shital_video_editor/shared/thumbnail_painter.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:get/get.dart';
 
@@ -12,6 +16,35 @@ class VideoTimeline extends StatefulWidget {
 }
 
 class _VideoTimelineState extends State<VideoTimeline> {
+  ui.Image? _cachedSpriteSheet;
+  String? _cachedPath;
+
+  Future<ui.Image?> _loadSpriteSheet(String spriteSheetPath) async {
+    if (spriteSheetPath.isEmpty) return null;
+
+    // Return cached image if path hasn't changed
+    if (_cachedPath == spriteSheetPath && _cachedSpriteSheet != null) {
+      return _cachedSpriteSheet;
+    }
+
+    try {
+      final file = File(spriteSheetPath);
+      if (!await file.exists()) return null;
+
+      final bytes = await file.readAsBytes();
+      final codec = await ui.instantiateImageCodec(bytes);
+      final frame = await codec.getNextFrame();
+
+      _cachedSpriteSheet = frame.image;
+      _cachedPath = spriteSheetPath;
+
+      return frame.image;
+    } catch (e) {
+      print('Error loading sprite sheet: $e');
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<EditorController>(
@@ -25,44 +58,83 @@ class _VideoTimelineState extends State<VideoTimeline> {
         double endHandlePosition = (controller.trimEnd / 1000.0) * 50.0;
         double timelineWidth = (controller.videoDurationMs / 1000.0) * 50.0;
 
-        // Base timeline widget
-        Widget timelineContent = CustomPaint(
-          painter: TrimPainter(
-            controller.trimStart,
-            controller.trimEnd,
-            isTrimmingMode: controller.selectedOptions == SelectedOptions.TRIM,
-          ),
-          child: Container(
-            width: timelineWidth,
-            height: 50.0,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-              borderRadius: BorderRadius.circular(12.0),
-              border: Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.5),
-                width: 2.0,
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.only(left: 8.0),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.video_camera_back,
-                    color: Theme.of(context).colorScheme.primary,
+        // Base timeline widget with thumbnails
+        Widget timelineContent = FutureBuilder<ui.Image?>(
+          future: _loadSpriteSheet(controller.project.spriteSheetPath),
+          builder: (context, snapshot) {
+            final spriteSheet = snapshot.data;
+
+            // Calculate sprite sheet metadata
+            final fps =
+                ThumbnailService.calculateOptimalFPS(controller.videoDuration);
+            final thumbnailCount = ThumbnailService.getThumbnailCount(
+                controller.videoDuration, fps);
+            final gridSize = ThumbnailService.calculateGridSize(thumbnailCount);
+
+            return Stack(
+              children: [
+                // Thumbnail layer
+                if (spriteSheet != null)
+                  CustomPaint(
+                    painter: ThumbnailPainter(
+                      spriteSheet: spriteSheet,
+                      videoDuration: controller.videoDuration,
+                      thumbnailCount: thumbnailCount,
+                      columns: gridSize[0],
+                      rows: gridSize[1],
+                      timelineWidth: timelineWidth,
+                    ),
+                    size: Size(timelineWidth, 50.0),
                   ),
-                  const SizedBox(width: 4.0),
-                  Text(
-                    controller.project.name,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleSmall!
-                        .copyWith(color: Theme.of(context).colorScheme.primary),
+                // Overlay with trim painter and container
+                CustomPaint(
+                  painter: TrimPainter(
+                    controller.trimStart,
+                    controller.trimEnd,
+                    isTrimmingMode:
+                        controller.selectedOptions == SelectedOptions.TRIM,
                   ),
-                ],
-              ),
-            ),
-          ),
+                  child: Container(
+                    width: timelineWidth,
+                    height: 50.0,
+                    decoration: BoxDecoration(
+                      color:
+                          Colors.transparent, // Transparent to show thumbnails
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: const ui.Color.fromARGB(0, 255, 255, 255),
+                        width: 2.0,
+                      ),
+                    ),
+                    child: spriteSheet == null
+                        ? Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.video_camera_back,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                                const SizedBox(width: 4.0),
+                                Text(
+                                  controller.project.name,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall!
+                                      .copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary),
+                                ),
+                              ],
+                            ),
+                          )
+                        : null,
+                  ),
+                ),
+              ],
+            );
+          },
         );
 
         // If in trim mode, use a Stack to overlay gesture detectors for handles
@@ -128,12 +200,15 @@ class _VideoTimelineState extends State<VideoTimeline> {
           );
         }
 
-        return Row(
-          children: [
-            SizedBox(width: MediaQuery.of(context).size.width * 0.5),
-            timelineWidget,
-            SizedBox(width: MediaQuery.of(context).size.width * 0.5),
-          ],
+        return Container(
+          color: Color(0xFF1A1A1A), // Dark grey background
+          child: Row(
+            children: [
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+              timelineWidget,
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+            ],
+          ),
         );
       },
     );

@@ -42,6 +42,7 @@ class EditorController extends GetxController {
 
   Duration? _position = Duration(seconds: 0);
   bool isTimelineScrollLocked = false;
+  bool _isUserScrolling = false;
 
   get videoController => _videoController;
   bool get isVideoInitialized =>
@@ -421,14 +422,11 @@ class EditorController extends GetxController {
         // Make timeline scroll smoothly.
         int posDif = _position!.inMilliseconds - previousPos!.inMilliseconds;
 
-        // Animate the video timeline scroll position to match the video position.
-        if (!(scrollController.position.userScrollDirection !=
-                ScrollDirection.idle) &&
-            posDif > 0) {
-          double scrollPosition =
-              ((_position!.inMilliseconds) * 0.001 * 50.0).ceilToDouble();
-          scrollController.animateTo(scrollPosition,
-              duration: Duration(milliseconds: posDif), curve: Curves.linear);
+        // Jump the video timeline scroll position to match the video position instantly.
+        // Only auto-scroll if the user is not currently scrolling.
+        if (!_isUserScrolling && posDif > 0) {
+          double scrollPosition = ((_position!.inMilliseconds) * 0.001 * 50.0);
+          scrollController.jumpTo(scrollPosition);
         }
 
         update();
@@ -439,8 +437,13 @@ class EditorController extends GetxController {
     scrollController.addListener(() {
       if (scrollController.position.userScrollDirection !=
           ScrollDirection.idle) {
+        // Set flag to prevent playback auto-scroll interference
+        _isUserScrolling = true;
         pauseVideo();
         updateVideoPosition(scrollController.position.pixels / 50.0);
+      } else if (_isUserScrolling) {
+        // Clear flag after user stops scrolling
+        _isUserScrolling = false;
       }
       update();
     });

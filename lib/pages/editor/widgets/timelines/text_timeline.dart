@@ -27,124 +27,131 @@ class TextTimeline extends StatelessWidget {
   _textTimeline(BuildContext context, double width) {
     return GetBuilder<EditorController>(
       builder: (_) {
-        return Row(
-          children: [
-            SizedBox(width: MediaQuery.of(context).size.width * 0.5),
-            InkWell(
-              onTap: () {
-                if (_.selectedOptions != SelectedOptions.TEXT) {
-                  _.selectedOptions = SelectedOptions.TEXT;
-                }
-                if (!_.hasText) {
-                  Get.dialog(AddTextDialog());
-                }
-              },
-              child: Container(
-                width: width,
-                height: 50.0,
-                decoration: BoxDecoration(
-                  color: CustomColors.textTimeline.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(12.0),
-                  border: Border.all(
-                    color: CustomColors.textTimeline.withOpacity(0.4),
-                    width: 2.0,
+        return Container(
+          color: Color(0xFF1A1A1A), // Dark grey background
+          child: Row(
+            children: [
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+              InkWell(
+                onTap: () {
+                  if (_.selectedOptions != SelectedOptions.TEXT) {
+                    _.selectedOptions = SelectedOptions.TEXT;
+                  }
+                  if (!_.hasText) {
+                    Get.dialog(AddTextDialog());
+                  }
+                },
+                child: Container(
+                  width: width,
+                  height: 50.0,
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(12.0),
+                    border: Border.all(
+                      color: const Color.fromARGB(0, 255, 255, 255),
+                      width: 2.0,
+                    ),
                   ),
-                ),
-                child: !_.hasText
-                    ? Padding(
-                        padding: const EdgeInsets.fromLTRB(8.0, 0.0, 16.0, 0.0),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.add,
-                              color: CustomColors.textTimeline,
-                            ),
-                            SizedBox(width: 4.0),
-                            Expanded(
-                              child: Text(
-                                translations.textTimelineAddText.tr,
-                                overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall!
-                                    .copyWith(color: CustomColors.textTimeline),
+                  child: !_.hasText
+                      ? Padding(
+                          padding:
+                              const EdgeInsets.fromLTRB(8.0, 0.0, 16.0, 0.0),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.add,
+                                color: CustomColors.textTimeline,
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Stack(
-                        children: [
-                          ...List.generate(_.nTexts, (i) {
-                            TextTransformation text = _.texts[i];
-                            bool isTextSelected = _.selectedTextId == text.id;
+                              SizedBox(width: 4.0),
+                              Expanded(
+                                child: Text(
+                                  translations.textTimelineAddText.tr,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall!
+                                      .copyWith(
+                                          color: CustomColors.textTimeline),
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Stack(
+                          children: [
+                            ...List.generate(_.nTexts, (i) {
+                              TextTransformation text = _.texts[i];
+                              bool isTextSelected = _.selectedTextId == text.id;
 
-                            return Row(
-                              children: [
-                                Container(
-                                    width: (text.msStartTime / 1000 * 50.0)),
-                                InkWell(
-                                  onTap: () {
-                                    if (_.selectedOptions !=
-                                        SelectedOptions.TEXT) {
-                                      _.selectedOptions = SelectedOptions.TEXT;
-                                    }
-                                    _.selectedTextId = text.id;
-                                  },
-                                  onLongPress: () {
-                                    Get.dialog(SelectTextDialog());
-                                  },
-                                  child: Container(
-                                    width:
-                                        ((text.msDuration / 1000) * 50.0) - 4.0,
-                                    height: 50.0,
-                                    decoration: BoxDecoration(
-                                      color: isTextSelected
-                                          ? Colors.white
-                                          : CustomColors.textTimelineLight,
-                                      borderRadius: BorderRadius.circular(10.0),
-                                      border: Border.all(
-                                        color: CustomColors.textTimeline
-                                            .withOpacity(
-                                                isTextSelected ? 1.0 : 0.75),
-                                        width: 2.0,
+                              return Row(
+                                children: [
+                                  Container(
+                                      width: (text.msStartTime / 1000 * 50.0)),
+                                  InkWell(
+                                    onTap: () {
+                                      if (_.selectedOptions !=
+                                          SelectedOptions.TEXT) {
+                                        _.selectedOptions =
+                                            SelectedOptions.TEXT;
+                                      }
+                                      _.selectedTextId = text.id;
+                                    },
+                                    onLongPress: () {
+                                      Get.dialog(SelectTextDialog());
+                                    },
+                                    child: Container(
+                                      width: ((text.msDuration / 1000) * 50.0) -
+                                          4.0,
+                                      height: 50.0,
+                                      decoration: BoxDecoration(
+                                        color: isTextSelected
+                                            ? Colors.white
+                                            : CustomColors.textTimelineLight,
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
+                                        border: Border.all(
+                                          color: CustomColors.textTimeline
+                                              .withOpacity(
+                                                  isTextSelected ? 1.0 : 0.75),
+                                          width: 2.0,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 8.0),
+                                            child: Text(
+                                              text.text,
+                                              style: Theme.of(context)
+                                                  .textTheme
+                                                  .titleSmall!
+                                                  .copyWith(
+                                                    color: CustomColors
+                                                        .textTimeline,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                     ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 8.0),
-                                          child: Text(
-                                            text.text,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleSmall!
-                                                .copyWith(
-                                                  color:
-                                                      CustomColors.textTimeline,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
                                   ),
-                                ),
-                              ],
-                            );
-                          })
-                        ],
-                      ),
+                                ],
+                              );
+                            })
+                          ],
+                        ),
+                ),
               ),
-            ),
-            SizedBox(width: MediaQuery.of(context).size.width * 0.5),
-          ],
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+            ],
+          ),
         );
       },
     );
