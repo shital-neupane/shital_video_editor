@@ -28,7 +28,7 @@ dependencies:
   saver_gallery: ^4.1.0                 # Used for saving the exported videos to the gallery
   percent_indicator: ^4.2.3             # Used for showing progress of video export
   file_picker: ^10.3.7                  # Used for picking audio files.
-  audioplayers: ^5.2.1                  # Used for playing audio files along with the video
+  audioplayers: ^6.5.0                  # Used for playing audio files along with the video
   flex_color_picker: ^3.3.1             # Used for font and background text color picker
   shared_preferences: ^2.2.2            # Used for storing user preferences (theme, language, etc.)
   url_launcher: ^6.3.1
