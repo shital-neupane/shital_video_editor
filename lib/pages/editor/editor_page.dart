@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shital_video_editor/controllers/editor_controller.dart';
 import 'package:shital_video_editor/models/text.dart';
 import 'package:shital_video_editor/pages/editor/widgets/crop_grid.dart';
+import 'package:shital_video_editor/pages/editor/widgets/dialogs/add_text_dialog.dart';
 import 'package:shital_video_editor/pages/editor/widgets/dialogs/edit_text_dialog.dart';
 import 'package:shital_video_editor/pages/editor/widgets/timelines/audio_timeline.dart';
 import 'package:shital_video_editor/pages/editor/widgets/editor_actions.dart';
@@ -121,54 +122,65 @@ class EditorPage extends GetView<EditorController> {
   _videoContainer() {
     return GetBuilder<EditorController>(
       builder: (_) {
-        return InkWell(
-          onTap: () {
-            if (_.selectedOptions != SelectedOptions.CROP) {
-              _.isVideoPlaying ? _.pauseVideo() : _.playVideo();
-            }
-          },
-          child: Align(
-            alignment: Alignment.center,
-            child: AnimatedOpacity(
-              opacity: _.isVideoInitialized ? 1 : 0,
-              duration: Duration(milliseconds: 500),
-              child: AspectRatio(
-                aspectRatio: _.videoAspectRatio,
-                child: _.isVideoInitialized
-                    ? ClipRRect(
-                        borderRadius: BorderRadius.circular(12.0),
-                        child: Stack(
-                          children: [
-                            VideoPlayer(_.videoController!),
-                            _.isCropped &&
-                                    _.selectedOptions != SelectedOptions.CROP
-                                ? CustomPaint(
-                                    painter: CropPainter(
-                                      x: _.cropX,
-                                      y: _.cropY,
-                                      width: _.cropWidth,
-                                      height: _.cropHeight,
-                                    ),
-                                    child: SizedBox(
-                                      height: _.videoHeight * _.scalingFactor,
-                                      width: _.videoWidth * _.scalingFactor,
-                                    ))
-                                : SizedBox.shrink(),
-                            ..._.nTexts > 0
-                                ? _.texts.map((TextTransformation text) {
-                                    if (text.shouldDisplay(_.msVideoPosition))
-                                      return _getTextOverlay(text);
-                                    return SizedBox.shrink();
-                                  }).toList()
-                                : [SizedBox.shrink(), SizedBox.shrink()],
-                            _.selectedOptions == SelectedOptions.CROP
-                                ? CropGrid()
-                                : SizedBox.shrink(),
-                          ],
+        return Align(
+          alignment: Alignment.center,
+          child: AnimatedOpacity(
+            opacity: _.isVideoInitialized ? 1 : 0,
+            duration: Duration(milliseconds: 500),
+            child: AspectRatio(
+              aspectRatio: _.videoAspectRatio,
+              child: _.isVideoInitialized
+                  ? LayoutBuilder(builder: (context, constraints) {
+                      return GestureDetector(
+                        onTapUp: (details) {
+                          _.selectedTextId =
+                              ''; // Deselect text when tapping background
+                          if (_.selectedOptions != SelectedOptions.CROP) {
+                            final double normalizedX =
+                                details.localPosition.dx / constraints.maxWidth;
+                            final double normalizedY =
+                                details.localPosition.dy /
+                                    constraints.maxHeight;
+                            Get.dialog(
+                                AddTextDialog(x: normalizedX, y: normalizedY));
+                          }
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(12.0),
+                          child: Stack(
+                            children: [
+                              VideoPlayer(_.videoController!),
+                              _.isCropped &&
+                                      _.selectedOptions != SelectedOptions.CROP
+                                  ? CustomPaint(
+                                      painter: CropPainter(
+                                        x: _.cropX,
+                                        y: _.cropY,
+                                        width: _.cropWidth,
+                                        height: _.cropHeight,
+                                      ),
+                                      child: SizedBox(
+                                        height: _.videoHeight * _.scalingFactor,
+                                        width: _.videoWidth * _.scalingFactor,
+                                      ))
+                                  : SizedBox.shrink(),
+                              ..._.nTexts > 0
+                                  ? _.texts.map((TextTransformation text) {
+                                      if (text.shouldDisplay(_.msVideoPosition))
+                                        return _getTextOverlay(
+                                            text, constraints);
+                                      return SizedBox.shrink();
+                                    }).toList()
+                                  : [SizedBox.shrink(), SizedBox.shrink()],
+                              _.selectedOptions == SelectedOptions.CROP
+                                  ? CropGrid()
+                                  : SizedBox.shrink(),
+                            ],
+                          ),
                         ),
-                      )
-                    : SizedBox(),
-              ),
+                      );
+                    })
+                  : SizedBox(),
             ),
           ),
         );
@@ -208,24 +220,27 @@ class EditorPage extends GetView<EditorController> {
                   ),
                 ),
                 // Video position text
-                Row(
-                  children: [
-                    Text(
-                      _.videoPositionString,
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                          fontSize: 18.0, fontWeight: FontWeight.bold),
-                    ),
-                    Text(
-                      '/${_.videoDurationString}',
-                      style: Theme.of(context).textTheme.bodySmall!.copyWith(
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onBackground
-                                .withOpacity(0.25),
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ],
+                GetBuilder<EditorController>(
+                  id: 'timeline_position',
+                  builder: (_) => Row(
+                    children: [
+                      Text(
+                        _.videoPositionString,
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                            fontSize: 18.0, fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '/${_.videoDurationString}',
+                        style: Theme.of(context).textTheme.bodySmall!.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onBackground
+                                  .withOpacity(0.25),
+                              fontWeight: FontWeight.bold,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
                 // Other controls
                 Row(
@@ -278,7 +293,8 @@ class EditorPage extends GetView<EditorController> {
                 scrollDirection: Axis.horizontal,
                 physics: _.isTimelineScrollLocked
                     ? const NeverScrollableScrollPhysics()
-                    : const AlwaysScrollableScrollPhysics(),
+                    : const BouncingScrollPhysics(
+                        parent: AlwaysScrollableScrollPhysics()),
                 controller: _.scrollController,
                 child: Column(
                   children: [
@@ -439,7 +455,53 @@ class EditorPage extends GetView<EditorController> {
     );
   }
 
-  Widget _getTextOverlay(TextTransformation text) {
+  Widget _getTextOverlay(TextTransformation text, BoxConstraints constraints) {
+    if (text.x != null && text.y != null) {
+      return Positioned(
+        left: text.x! * constraints.maxWidth,
+        top: text.y! * constraints.maxHeight,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onPanStart: (details) {
+            if (controller.selectedOptions != SelectedOptions.TEXT) {
+              controller.selectedOptions = SelectedOptions.TEXT;
+            }
+            // We removed direct selection here so only tap selects as per user request
+          },
+          onPanUpdate: (details) {
+            final double newX =
+                (text.x! * constraints.maxWidth + details.delta.dx) /
+                    constraints.maxWidth;
+            final double newY =
+                (text.y! * constraints.maxHeight + details.delta.dy) /
+                    constraints.maxHeight;
+            controller.updateTextCoordinates(
+                text.id, newX.clamp(0.0, 1.0), newY.clamp(0.0, 1.0));
+          },
+          onPanEnd: (details) {
+            // Deselect after dragging as per user request
+            controller.selectedTextId = '';
+            controller.selectedOptions = SelectedOptions.BASE;
+          },
+          onPanCancel: () {
+            controller.selectedTextId = '';
+            controller.selectedOptions = SelectedOptions.BASE;
+          },
+          onTap: () {
+            if (controller.selectedOptions != SelectedOptions.TEXT) {
+              controller.selectedOptions = SelectedOptions.TEXT;
+            }
+            controller.selectedTextId = text.id;
+          },
+          onLongPress: () {
+            controller.selectedTextId = text.id;
+            Get.dialog(EditTextDialog());
+          },
+          child: _textWidget(text),
+        ),
+      );
+    }
+
     final [MainAxisAlignment rowAlignment, MainAxisAlignment columnAlignment] =
         getTextAlignmentFromPosition(text.position);
 
@@ -452,7 +514,8 @@ class EditorPage extends GetView<EditorController> {
             mainAxisAlignment: rowAlignment,
             children: [
               Flexible(
-                child: InkWell(
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
                   onTap: () {
                     if (controller.selectedOptions != SelectedOptions.TEXT) {
                       controller.selectedOptions = SelectedOptions.TEXT;
@@ -463,29 +526,33 @@ class EditorPage extends GetView<EditorController> {
                     controller.selectedTextId = text.id;
                     Get.dialog(EditTextDialog());
                   },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: text.backgroundColor != ''
-                          ? Color(int.parse(text.backgroundColor))
-                          : Colors.transparent,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(1.0),
-                      child: Text(
-                        text.text,
-                        softWrap: true,
-                        style: TextStyle(
-                          color: Color(int.parse(text.color)),
-                          fontSize: text.fontSize,
-                        ),
-                      ),
-                    ),
-                  ),
+                  child: _textWidget(text),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _textWidget(TextTransformation text) {
+    return Container(
+      decoration: BoxDecoration(
+        color: text.backgroundColor != ''
+            ? Color(int.parse(text.backgroundColor))
+            : Colors.transparent,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(1.0),
+        child: Text(
+          text.text,
+          softWrap: true,
+          style: TextStyle(
+            color: Color(int.parse(text.color)),
+            fontSize: text.fontSize,
+          ),
+        ),
       ),
     );
   }

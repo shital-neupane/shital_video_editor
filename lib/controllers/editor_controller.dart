@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:async';
 import 'dart:math';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -19,7 +20,6 @@ import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
 
 import 'package:intl/intl.dart';
-import 'package:shital_video_editor/models/project.dart';
 import 'package:shital_video_editor/pages/editor/widgets/audio_start_sheet.dart';
 import 'package:video_player/video_player.dart';
 
@@ -44,6 +44,11 @@ class EditorController extends GetxController {
   Duration? _position = Duration(seconds: 0);
   bool isTimelineScrollLocked = false;
   bool _isUserScrolling = false;
+  bool _isAutoScrolling = false;
+  int _lastSeekMs = -1;
+  DateTime _lastManualSeekTime =
+      DateTime.now().subtract(const Duration(seconds: 1));
+  Timer? _scrollDebounceTimer;
 
   get videoController => _videoController;
   bool get isVideoInitialized =>
@@ -402,6 +407,7 @@ class EditorController extends GetxController {
       jumpToStart();
 
       _videoController!.addListener(() {
+        if (_videoController == null) return;
         final previousPos = _position;
 
         // Update the video position every frame.
@@ -414,21 +420,15 @@ class EditorController extends GetxController {
           return;
         }
 
-        // If the video has reached the end (or trimEnd), pause it and reset the position.
-        if (_position!.inMilliseconds >= trimEnd &&
-            selectedOptions != SelectedOptions.TRIM) {
-          jumpToStart();
-          return;
-        }
-
-        // Make timeline scroll smoothly.
-        int posDif = _position!.inMilliseconds - previousPos!.inMilliseconds;
-
-        // Jump the video timeline scroll position to match the video position instantly.
         // Only auto-scroll if the user is not currently scrolling.
-        if (!_isUserScrolling && posDif > 0) {
+        // We sync if the position changed and the user isn't manual dragging the timeline.
+        // Also ignore position updates for 150ms after a manual seek to prevent jumping back to stale positions.
+        final now = DateTime.now();
+        if (!_isUserScrolling &&
+            _position != previousPos &&
+            now.difference(_lastManualSeekTime).inMilliseconds > 150) {
           double scrollPosition = ((_position!.inMilliseconds) * 0.001 * 50.0);
-          scrollController.jumpTo(scrollPosition);
+          _jumpTimeline(scrollPosition);
         }
 
         update();
@@ -437,17 +437,38 @@ class EditorController extends GetxController {
     });
 
     scrollController.addListener(() {
+      if (_isAutoScrolling) return;
+
       if (scrollController.position.userScrollDirection !=
           ScrollDirection.idle) {
-        // Set flag to prevent playback auto-scroll interference
         _isUserScrolling = true;
-        pauseVideo();
-        updateVideoPosition(scrollController.position.pixels / 50.0);
+        _lastManualSeekTime = DateTime.now();
+        if (isVideoPlaying) {
+          pauseVideo();
+        }
+        final double positionSeconds = scrollController.position.pixels / 50.0;
+        final int targetMs = (positionSeconds * 1000).toInt();
+
+        if (targetMs != _lastSeekMs) {
+          _lastSeekMs = targetMs;
+          // Lightweight seek for smoothness during the scroll
+          updateVideoPosition(positionSeconds, shouldUpdate: false);
+          update(['timeline_position']);
+        }
+
+        // Debounce: reset the timer on every scroll update
+        _scrollDebounceTimer?.cancel();
+        _scrollDebounceTimer = Timer(const Duration(milliseconds: 500), () {
+          // Final sync after 500ms of inactivity
+          if (!_isAutoScrolling) {
+            updateVideoPosition(positionSeconds, shouldUpdate: true);
+          }
+        });
       } else if (_isUserScrolling) {
-        // Clear flag after user stops scrolling
+        // Handle end of scroll or fling
         _isUserScrolling = false;
+        update();
       }
-      update();
     });
   }
 
@@ -525,6 +546,17 @@ class EditorController extends GetxController {
     }
   }
 
+  _jumpTimeline(double pixels) {
+    if (scrollController.hasClients) {
+      _isAutoScrolling = true;
+      scrollController.jumpTo(pixels);
+      // Briefly ignore the next few scroll listener calls to avoid feedback loop
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _isAutoScrolling = false;
+      });
+    }
+  }
+
   pauseVideo() {
     if (isAudioInitialized) {
       _audioPlayer.pause();
@@ -534,24 +566,35 @@ class EditorController extends GetxController {
   }
 
   playVideo() {
+    _isUserScrolling = false;
+    // Explicitly seek to current position before playing to ensure it starts exactly at playhead
+    _videoController!.seekTo(_position!);
     if (isAudioInitialized) {
+      _audioPlayer.seek(Duration(
+          milliseconds: _position!.inMilliseconds +
+              audioStart.inMilliseconds -
+              trimStart));
       _audioPlayer.resume();
     }
     _videoController!.play();
     update();
   }
 
-  updateVideoPosition(double position) {
-    // Convert the position to milliseconds and seek to that position.
-    _videoController!.seekTo(Duration(milliseconds: (position * 1000).toInt()));
+  updateVideoPosition(double position, {bool shouldUpdate = true}) {
+    final int targetMs = (position * 1000).toInt();
+    if (targetMs == _lastSeekMs && !shouldUpdate) return;
+    _lastSeekMs = targetMs;
+    _position = Duration(milliseconds: targetMs);
+    _lastManualSeekTime = DateTime.now();
+
+    _videoController!.seekTo(_position!);
     if (isAudioInitialized) {
-      // Go to the relative position in the audio.
       _audioPlayer.seek(Duration(
-          milliseconds: (position * 1000).toInt() +
-              audioStart.inMilliseconds -
-              trimStart));
+          milliseconds: targetMs + audioStart.inMilliseconds - trimStart));
     }
-    update();
+    if (shouldUpdate) {
+      update();
+    }
   }
 
   setTrimStart() {
@@ -583,23 +626,27 @@ class EditorController extends GetxController {
   }
 
   jumpBack50ms() {
-    _videoController!
-        .seekTo(Duration(milliseconds: _position!.inMilliseconds - 50));
+    _position = Duration(milliseconds: _position!.inMilliseconds - 50);
+    _lastManualSeekTime = DateTime.now();
+    _videoController!.seekTo(_position!);
     scrollController.jumpTo(scrollController.position.pixels - 2.5);
     update();
   }
 
   jumpForward50ms() {
-    _videoController!
-        .seekTo(Duration(milliseconds: _position!.inMilliseconds + 50));
+    _position = Duration(milliseconds: _position!.inMilliseconds + 50);
+    _lastManualSeekTime = DateTime.now();
+    _videoController!.seekTo(_position!);
     scrollController.jumpTo(scrollController.position.pixels + 2.5);
     update();
   }
 
   jumpToStart() {
     _videoController!.pause();
-    _videoController!.seekTo(Duration(milliseconds: trimStart));
-    scrollController.jumpTo(trimStart * 0.001 * 50.0);
+    _position = Duration(milliseconds: trimStart);
+    _lastManualSeekTime = DateTime.now();
+    _videoController!.seekTo(_position!);
+    _jumpTimeline(trimStart * 0.001 * 50.0);
     if (isAudioInitialized) {
       _audioPlayer.seek(audioStart);
       _audioPlayer.pause();
@@ -646,8 +693,8 @@ class EditorController extends GetxController {
     }
   }
 
-  addProjectText() {
-    print('DEBUG: addProjectText called with text: $textToAdd');
+  addProjectText({double? x, double? y}) {
+    print('DEBUG: addProjectText called with text: $textToAdd at ($x, $y)');
     // Avoid duration to be bigger than the video duration.
     int msStartTime = _position!.inMilliseconds;
     int finalTextDuration = textDuration * 1000;
@@ -660,6 +707,8 @@ class EditorController extends GetxController {
       text: textToAdd,
       msDuration: finalTextDuration,
       msStartTime: msStartTime,
+      x: x,
+      y: y,
     );
     project.transformations.texts.add(t);
 
@@ -670,6 +719,14 @@ class EditorController extends GetxController {
     textToAdd = '';
     textDuration = 5;
     print('DEBUG: addProjectText finished, text added to list');
+  }
+
+  updateTextCoordinates(String id, double x, double y) {
+    TextTransformation text =
+        project.transformations.texts.firstWhere((element) => element.id == id);
+    text.x = x;
+    text.y = y;
+    update();
   }
 
   deleteSelectedText() {
@@ -752,6 +809,31 @@ class EditorController extends GetxController {
     project.transformations.texts
         .firstWhere((element) => element.id == selectedTextId)
         .text = value;
+    update();
+  }
+
+  updateTextStartDelta(String id, int deltaMs) {
+    TextTransformation text =
+        project.transformations.texts.firstWhere((element) => element.id == id);
+    int newStart = text.msStartTime + deltaMs;
+    if (newStart < 0) newStart = 0;
+    // ensure start + duration doesn't exceed video duration
+    if (newStart + text.msDuration > trimEnd) {
+      newStart = trimEnd - text.msDuration;
+    }
+    text.msStartTime = newStart;
+    update();
+  }
+
+  updateTextDurationDelta(String id, int deltaMs) {
+    TextTransformation text =
+        project.transformations.texts.firstWhere((element) => element.id == id);
+    int newDuration = text.msDuration + deltaMs;
+    if (newDuration < 100) newDuration = 100; // min 100ms
+    if (text.msStartTime + newDuration > trimEnd) {
+      newDuration = trimEnd - text.msStartTime;
+    }
+    text.msDuration = newDuration;
     update();
   }
 

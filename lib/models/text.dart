@@ -10,6 +10,8 @@ class TextTransformation {
   String backgroundColor;
   TextPosition position;
   double fontSize;
+  double? x;
+  double? y;
 
   TextTransformation({
     required this.text,
@@ -19,6 +21,8 @@ class TextTransformation {
     this.fontSize = 16.0,
     this.backgroundColor = '',
     this.position = TextPosition.BC,
+    this.x,
+    this.y,
   }) : id = Uuid().v4().replaceAll('-', '');
 
   TextTransformation.fromJson(Map<String, dynamic> json)
@@ -29,8 +33,11 @@ class TextTransformation {
         color = json['color'],
         backgroundColor = json['backgroundColor'],
         fontSize = (json['fontSize'] ?? 16.0).toDouble(),
+        x = json['x']?.toDouble(),
+        y = json['y']?.toDouble(),
         position = json['position'] != null
-            ? TextPosition.values.firstWhere((e) => e.toString() == json['position'])
+            ? TextPosition.values
+                .firstWhere((e) => e.toString() == json['position'])
             : TextPosition.BC;
 
   Map<String, dynamic> toJson() => {
@@ -41,8 +48,11 @@ class TextTransformation {
         'color': color,
         'backgroundColor': backgroundColor,
         'fontSize': fontSize,
+        'x': x,
+        'y': y,
         'position': position.toString()
       };
 
-  bool shouldDisplay(int position) => position >= msStartTime && position <= msStartTime + msDuration;
+  bool shouldDisplay(int position) =>
+      position >= msStartTime && position <= msStartTime + msDuration;
 }

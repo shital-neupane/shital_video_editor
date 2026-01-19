@@ -6,6 +6,7 @@ import 'package:shital_video_editor/pages/editor/widgets/dialogs/select_text_dia
 import 'package:shital_video_editor/shared/core/colors.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:get/get.dart';
+import 'package:shital_video_editor/shared/custom_painters.dart';
 import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
 
@@ -99,47 +100,110 @@ class TextTimeline extends StatelessWidget {
                                     onLongPress: () {
                                       Get.dialog(SelectTextDialog());
                                     },
-                                    child: Container(
-                                      width: ((text.msDuration / 1000) * 50.0) -
-                                          4.0,
-                                      height: 50.0,
-                                      decoration: BoxDecoration(
-                                        color: isTextSelected
-                                            ? Colors.white
-                                            : CustomColors.textTimelineLight,
-                                        borderRadius:
-                                            BorderRadius.circular(10.0),
-                                        border: Border.all(
-                                          color: CustomColors.textTimeline
-                                              .withOpacity(
-                                                  isTextSelected ? 1.0 : 0.75),
-                                          width: 2.0,
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          width: ((text.msDuration / 1000) *
+                                                  50.0) -
+                                              4.0,
+                                          height: 50.0,
+                                          decoration: BoxDecoration(
+                                            color: isTextSelected
+                                                ? Colors.white
+                                                : CustomColors
+                                                    .textTimelineLight,
+                                            borderRadius:
+                                                BorderRadius.circular(10.0),
+                                            border: Border.all(
+                                              color: CustomColors.textTimeline
+                                                  .withOpacity(isTextSelected
+                                                      ? 1.0
+                                                      : 0.75),
+                                              width: 2.0,
+                                            ),
+                                          ),
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 8.0),
+                                                child: Text(
+                                                  text.text,
+                                                  style: Theme.of(context)
+                                                      .textTheme
+                                                      .titleSmall!
+                                                      .copyWith(
+                                                        color: CustomColors
+                                                            .textTimeline,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Padding(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 8.0),
-                                            child: Text(
-                                              text.text,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .titleSmall!
-                                                  .copyWith(
-                                                    color: CustomColors
-                                                        .textTimeline,
-                                                    overflow:
-                                                        TextOverflow.ellipsis,
-                                                  ),
+                                        if (isTextSelected) ...[
+                                          // Trim Handles Overlay
+                                          Positioned.fill(
+                                            child: CustomPaint(
+                                              painter: TrimPainter(
+                                                0, // start relative to container
+                                                text.msDuration,
+                                                isTrimmingMode: true,
+                                              ),
+                                            ),
+                                          ),
+                                          // Left Handle detector
+                                          Positioned(
+                                            left: -10,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 30,
+                                            child: GestureDetector(
+                                              behavior: HitTestBehavior.opaque,
+                                              onHorizontalDragUpdate:
+                                                  (details) {
+                                                int deltaMs =
+                                                    (details.delta.dx /
+                                                            50.0 *
+                                                            1000)
+                                                        .toInt();
+                                                _.updateTextStartDelta(
+                                                    text.id, deltaMs);
+                                                _.updateTextDurationDelta(
+                                                    text.id, -deltaMs);
+                                              },
+                                            ),
+                                          ),
+                                          // Right Handle detector
+                                          Positioned(
+                                            right: -10,
+                                            top: 0,
+                                            bottom: 0,
+                                            width: 30,
+                                            child: GestureDetector(
+                                              behavior: HitTestBehavior.opaque,
+                                              onHorizontalDragUpdate:
+                                                  (details) {
+                                                int deltaMs =
+                                                    (details.delta.dx /
+                                                            50.0 *
+                                                            1000)
+                                                        .toInt();
+                                                _.updateTextDurationDelta(
+                                                    text.id, deltaMs);
+                                              },
                                             ),
                                           ),
                                         ],
-                                      ),
+                                      ],
                                     ),
                                   ),
                                 ],

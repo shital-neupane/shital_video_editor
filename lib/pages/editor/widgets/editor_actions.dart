@@ -8,7 +8,6 @@ import 'package:shital_video_editor/pages/editor/widgets/dialogs/font_color_dial
 import 'package:shital_video_editor/pages/editor/widgets/dialogs/font_size_dialog.dart';
 import 'package:shital_video_editor/pages/editor/widgets/dialogs/set_start_dialog.dart';
 import 'package:shital_video_editor/pages/editor/widgets/dialogs/text_duration_dialog.dart';
-import 'package:shital_video_editor/pages/editor/widgets/dialogs/text_position_dialog.dart';
 import 'package:shital_video_editor/pages/editor/widgets/dialogs/track_volume_dialog.dart';
 import 'package:shital_video_editor/shared/core/CustomIcons_icons.dart';
 import 'package:shital_video_editor/shared/core/colors.dart';
@@ -16,7 +15,8 @@ import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/snackbar.dart';
 import 'package:shital_video_editor/shared/widgets/edit_action_button.dart';
 import 'package:get/get.dart';
-import 'package:shital_video_editor/shared/translations/translation_keys.dart' as translations;
+import 'package:shital_video_editor/shared/translations/translation_keys.dart'
+    as translations;
 
 class EditorActions extends StatelessWidget {
   // Base video options that will be displayed in the editor.
@@ -84,8 +84,9 @@ class EditorActions extends StatelessWidget {
 
   final List<EditOption> audioOptions = [
     EditOption(
-      title:
-          EditorController.to.hasAudio ? translations.audioOptionsChangeAudio.tr : translations.audioOptionsAddAudio.tr,
+      title: EditorController.to.hasAudio
+          ? translations.audioOptionsChangeAudio.tr
+          : translations.audioOptionsAddAudio.tr,
       icon: Icons.add,
       onPressed: () {
         EditorController.to.pickAudio();
@@ -110,7 +111,8 @@ class EditorActions extends StatelessWidget {
         onPressed: () {
           // Only display the bottom sheet if the video has audio and the audio duration is bigger than the
           // final video duration.
-          if (EditorController.to.hasAudio && EditorController.to.canSetAudioStart) {
+          if (EditorController.to.hasAudio &&
+              EditorController.to.canSetAudioStart) {
             Get.bottomSheet(AudioStartSheet()).then((value) {
               EditorController.to.onAudioStartSheetClosed();
             });
@@ -122,7 +124,8 @@ class EditorActions extends StatelessWidget {
               CustomColors.error,
               translations.audioOptionsAudioStartErrorTitle.tr,
               EditorController.to.hasAudio
-                  ? translations.audioOptionsAudioStartErrorSubtitleSmallerDuration.tr
+                  ? translations
+                      .audioOptionsAudioStartErrorSubtitleSmallerDuration.tr
                   : translations.audioOptionsAudioStartErrorSubtitleNoAudio.tr,
               Icons.error_outline,
             );
@@ -205,22 +208,6 @@ class EditorActions extends StatelessWidget {
             );
           }
         }),
-    EditOption(
-      title: translations.textOptionsTextPosition.tr,
-      icon: Icons.align_vertical_center,
-      onPressed: () {
-        if (EditorController.to.selectedTextId != '') {
-          Get.dialog(TextPositionDialog());
-        } else {
-          showSnackbar(
-            CustomColors.error,
-            translations.textOptionsNoSelectedTextErrorTitle.tr,
-            translations.textOptionsTextPositionError.tr,
-            Icons.error_outline,
-          );
-        }
-      },
-    ),
     EditOption(
         title: translations.textOptionsTextStart.tr,
         icon: Icons.start,
@@ -337,20 +324,13 @@ class EditorActions extends StatelessWidget {
           builder: (_) {
             var options = baseVideoOptions;
 
-            switch (_.selectedOptions) {
-              case SelectedOptions.BASE:
-                options = baseVideoOptions;
-              case SelectedOptions.TRIM:
-                options = trimOptions;
-              case SelectedOptions.AUDIO:
-                options = audioOptions;
-              case SelectedOptions.TEXT:
-                options = textOptions;
-              case SelectedOptions.CROP:
-                options = cropOptions;
-              default:
-                options = baseVideoOptions;
-            }
+            options = switch (_.selectedOptions) {
+              SelectedOptions.BASE => baseVideoOptions,
+              SelectedOptions.TRIM => trimOptions,
+              SelectedOptions.AUDIO => audioOptions,
+              SelectedOptions.TEXT => textOptions,
+              SelectedOptions.CROP => cropOptions,
+            };
 
             return Center(
               child: SingleChildScrollView(
@@ -375,12 +355,15 @@ class EditorActions extends StatelessWidget {
                               width: 40.0,
                               child: Icon(
                                 Icons.arrow_back_ios,
-                                color: Theme.of(context).colorScheme.onBackground,
+                                color:
+                                    Theme.of(context).colorScheme.onBackground,
                               ),
                             ),
                           )
                         : SizedBox.shrink(),
-                    _.selectedOptions == SelectedOptions.BASE ? SizedBox(width: 12.0) : SizedBox(width: 8.0),
+                    _.selectedOptions == SelectedOptions.BASE
+                        ? SizedBox(width: 12.0)
+                        : SizedBox(width: 8.0),
                     ...options.map((option) {
                       return Row(children: [
                         EditActionButton(
@@ -388,7 +371,9 @@ class EditorActions extends StatelessWidget {
                           icon: option.icon,
                           text: option.title,
                         ),
-                        _.selectedOptions == SelectedOptions.BASE ? SizedBox(width: 12.0) : SizedBox(width: 8.0),
+                        _.selectedOptions == SelectedOptions.BASE
+                            ? SizedBox(width: 12.0)
+                            : SizedBox(width: 8.0),
                       ]);
                     }),
                   ],

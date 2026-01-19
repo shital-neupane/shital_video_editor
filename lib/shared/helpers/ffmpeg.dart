@@ -17,12 +17,14 @@ Future<String> registerFonts() async {
   final path = '$dir/$filename';
 
   final buffer = bytes.buffer;
-  await File(path).writeAsBytes(buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+  await File(path).writeAsBytes(
+      buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
 
   File file = File('$dir/$filename');
 
   print('Loaded file ${file.path}');
-  FFmpegKitConfig.setFontDirectoryList(["/system/fonts", "/System/Library/Fonts", file.path]);
+  FFmpegKitConfig.setFontDirectoryList(
+      ["/system/fonts", "/System/Library/Fonts", file.path]);
 
   return file.path;
 }
@@ -38,10 +40,12 @@ Future<String> generateFFMPEGCommand(
     ExportOptions exportOptions) async {
   final hasAudio = transformations.audioUrl.isNotEmpty;
   final hasTexts = transformations.texts.isNotEmpty;
-  final hasCrop = transformations.cropWidth < videoWidth || transformations.cropHeight < videoHeight;
+  final hasCrop = transformations.cropWidth < videoWidth ||
+      transformations.cropHeight < videoHeight;
 
   // Base command
-  String command = '-i "$inputPath" ${hasAudio ? '-i "${transformations.audioUrl}" ' : ''}';
+  String command =
+      '-i "$inputPath" ${hasAudio ? '-i "${transformations.audioUrl}" ' : ''}';
 
   // Add trim command
   command += getFilterComplexTrimCommand(
@@ -70,8 +74,14 @@ Future<String> generateFFMPEGCommand(
   );
 
   // Add crop command
-  command += getFilterComplexCropCommand(transformations.cropX, transformations.cropY, transformations.cropWidth,
-      transformations.cropHeight, scalingFactor, hasCrop, hasTexts);
+  command += getFilterComplexCropCommand(
+      transformations.cropX,
+      transformations.cropY,
+      transformations.cropWidth,
+      transformations.cropHeight,
+      scalingFactor,
+      hasCrop,
+      hasTexts);
 
   // Add end command
   command +=
@@ -97,8 +107,8 @@ String msToFFMPEGTime(int milliseconds) {
   return '$hoursString\\\\\\:$minutesString\\\\\\:$secondsString.$msString';
 }
 
-String getFilterComplexTrimCommand(
-    int msTrimStart, int msTrimEnd, int msVideoDuration, double masterVolume, String fps) {
+String getFilterComplexTrimCommand(int msTrimStart, int msTrimEnd,
+    int msVideoDuration, double masterVolume, String fps) {
   String command = '';
   command +=
       '-filter_complex [0:v]trim=start=${msToFFMPEGTime(msTrimStart)}:end=${msToFFMPEGTime(msTrimEnd)},setpts=PTS-STARTPTS${fps != '' ? ',fps=fps=$fps:round=near' : ''}[v0];';
@@ -107,7 +117,8 @@ String getFilterComplexTrimCommand(
   return command;
 }
 
-String getFilterComplexAudioCommand(bool hasAudio, double audioVolume, int msAudioStart) {
+String getFilterComplexAudioCommand(
+    bool hasAudio, double audioVolume, int msAudioStart) {
   String command = '';
 
   // If there is no audio, return empty string
@@ -116,7 +127,8 @@ String getFilterComplexAudioCommand(bool hasAudio, double audioVolume, int msAud
   }
 
   // Configure the audio that will be merged with the video
-  command += ';[1:a]atrim=start=${msToFFMPEGTime(msAudioStart)},volume=$audioVolume,asetpts=PTS-STARTPTS[a1];';
+  command +=
+      ';[1:a]atrim=start=${msToFFMPEGTime(msAudioStart)},volume=$audioVolume,asetpts=PTS-STARTPTS[a1];';
 
   // Combine the two audios
   command += '[a0][a1]amix=inputs=2:duration=first[audio_out]';
@@ -148,11 +160,17 @@ String getFilterComplexTextCommand(
 
     // If the text has a background color, add it
     if (text.backgroundColor != '') {
-      command += ':box=1:boxcolor=${convertColorToFFMPEGColor(text.backgroundColor)}:boxborderw=10';
+      command +=
+          ':box=1:boxcolor=${convertColorToFFMPEGColor(text.backgroundColor)}:boxborderw=10';
     }
 
     // Add position
-    command += ':${convertTextPositionToFFMPEGPosition(text.position, scalingFactor)}';
+    if (text.x != null && text.y != null) {
+      command += ':x=${text.x}*main_w:y=${text.y}*main_h';
+    } else {
+      command +=
+          ':${convertTextPositionToFFMPEGPosition(text.position, scalingFactor)}';
+    }
 
     // Add start and end time
     command +=
@@ -206,7 +224,8 @@ String convertColorToFFMPEGColor(String color) {
   return '0x${color.substring(4)}${color.substring(2, 4)}';
 }
 
-String convertTextPositionToFFMPEGPosition(TextPosition position, double scalingFactor) {
+String convertTextPositionToFFMPEGPosition(
+    TextPosition position, double scalingFactor) {
   List<String> tp = position.toString().split('.').last.split('');
   String vp = tp[0];
   String hp = tp[1];

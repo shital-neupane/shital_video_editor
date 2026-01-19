@@ -138,10 +138,18 @@ class _VideoTimelineState extends State<VideoTimeline> {
         );
 
         // If in trim mode, use a Stack to overlay gesture detectors for handles
-        Widget timelineWidget = timelineContent;
+        Widget timelineWidget = GestureDetector(
+          onTap: () {
+            if (controller.selectedOptions != SelectedOptions.TRIM) {
+              controller.selectedOptions = SelectedOptions.TRIM;
+            }
+          },
+          child: timelineContent,
+        );
         if (controller.selectedOptions == SelectedOptions.TRIM) {
           const double handleTouchWidth = 40.0;
           timelineWidget = Stack(
+            clipBehavior: Clip.none,
             children: [
               timelineContent,
               // Start Handle Detector
@@ -202,11 +210,12 @@ class _VideoTimelineState extends State<VideoTimeline> {
 
         return Container(
           color: Color(0xFF1A1A1A), // Dark grey background
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
           child: Row(
             children: [
-              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5 - 10.0),
               timelineWidget,
-              SizedBox(width: MediaQuery.of(context).size.width * 0.5),
+              SizedBox(width: MediaQuery.of(context).size.width * 0.5 - 10.0),
             ],
           ),
         );
@@ -233,6 +242,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
 
     controller.project.transformations.trimStart =
         Duration(milliseconds: newStartMs);
+
+    // Seek video for real-time preview
+    controller.updateVideoPosition(newStartMs / 1000.0);
     controller.update();
   }
 
@@ -255,6 +267,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
 
     controller.project.transformations.trimEnd =
         Duration(milliseconds: newEndMs);
+
+    // Seek video for real-time preview
+    controller.updateVideoPosition(newEndMs / 1000.0);
     controller.update();
   }
 }

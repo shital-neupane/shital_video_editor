@@ -40,61 +40,84 @@ class TrimPainter extends CustomPainter {
     endX = endX.clamp(0.0, size.width);
     startX = startX.clamp(0.0, size.width);
 
+    // Instagram style frame color (Purple/Violet)
+    const Color frameColor = Color(0xFF9C27B0); // Purple
+    const double handleWidth = 20.0;
+    const double lineWidth = 2.0;
+
     // Draw the background region that is trimmed out (before start and after end)
+    // Using a more opaque black to "only display the part that will remain"
+    Paint overlayPaint = Paint()..color = Colors.black.withOpacity(0.7);
+
     if (startX > 0) {
-      drawRoundedRectangleWithOpacity(
-          canvas, 0.0, startX, Colors.black.withOpacity(0.15), size, true);
+      canvas.drawRect(Rect.fromLTWH(0, 0, startX, size.height), overlayPaint);
     }
 
     if (endX < size.width) {
-      drawRoundedRectangleWithOpacity(canvas, endX, size.width,
-          Colors.black.withOpacity(0.15), size, false);
+      canvas.drawRect(
+          Rect.fromLTWH(endX, 0, size.width - endX, size.height), overlayPaint);
     }
 
-    // Draw trim start handle only if it's within the visible range
-    if (startX >= 0 && startX <= size.width) {
-      canvas.drawLine(
-        Offset(startX, 0),
-        Offset(startX, size.height),
-        Paint()
-          ..color = Colors.red
-          ..strokeWidth = 2.0,
+    // Only draw the frame if in trimming mode or always? User said "for trim handles".
+    // Usually, we want to see it clearly when in TRIM mode.
+    if (isTrimmingMode) {
+      Paint framePaint = Paint()
+        ..color = frameColor
+        ..style = PaintingStyle.fill;
+
+      // Draw Start Handle (Thick vertical bar)
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(startX - handleWidth / 2, 0, handleWidth, size.height),
+          topLeft: const Radius.circular(8.0),
+          bottomLeft: const Radius.circular(8.0),
+        ),
+        framePaint,
       );
 
-      // Draw a handle if in trimming mode
-      if (isTrimmingMode) {
-        drawHandle(canvas, Offset(startX, size.height / 2), Colors.red);
-      } else {
-        drawTriangle(
-          canvas,
-          Offset(startX, 1),
-          Colors.red,
-          false, // pointing down
-        );
-      }
+      // Draw End Handle (Thick vertical bar)
+      canvas.drawRRect(
+        RRect.fromRectAndCorners(
+          Rect.fromLTWH(endX - handleWidth / 2, 0, handleWidth, size.height),
+          topRight: const Radius.circular(8.0),
+          bottomRight: const Radius.circular(8.0),
+        ),
+        framePaint,
+      );
+
+      // Draw Top line
+      canvas.drawRect(
+        Rect.fromLTWH(startX, 0, endX - startX, lineWidth),
+        framePaint,
+      );
+
+      // Draw Bottom line
+      canvas.drawRect(
+        Rect.fromLTWH(
+            startX, size.height - lineWidth, endX - startX, lineWidth),
+        framePaint,
+      );
+
+      // Add a small detail: vertical grip lines on the thicker handles
+      _drawGrip(canvas, Offset(startX, size.height / 2), Colors.white38);
+      _drawGrip(canvas, Offset(endX, size.height / 2), Colors.white38);
     }
+  }
 
-    // Draw trim end handle only if it's within the visible range
-    if (endX >= 0 && endX <= size.width) {
+  void _drawGrip(Canvas canvas, Offset center, Color color) {
+    Paint gripPaint = Paint()
+      ..color = color
+      ..strokeWidth = 2.0
+      ..strokeCap = StrokeCap.round;
+
+    // Draw two vertical lines for grip on the thick handle
+    for (int i = -1; i <= 1; i += 2) {
+      double x = center.dx + (i * 4.0);
       canvas.drawLine(
-        Offset(endX, 0),
-        Offset(endX, size.height),
-        Paint()
-          ..color = Colors.blue
-          ..strokeWidth = 2.0,
+        Offset(x, center.dy - 10),
+        Offset(x, center.dy + 10),
+        gripPaint,
       );
-
-      // Draw a handle if in trimming mode
-      if (isTrimmingMode) {
-        drawHandle(canvas, Offset(endX, size.height / 2), Colors.blue);
-      } else {
-        drawTriangle(
-          canvas,
-          Offset(endX, 1),
-          Colors.blue,
-          false,
-        );
-      }
     }
   }
 
@@ -106,117 +129,6 @@ class TrimPainter extends CustomPainter {
           isTrimmingMode != oldDelegate.isTrimmingMode;
     }
     return true;
-  }
-
-  void drawTriangle(
-      Canvas canvas, Offset position, Color color, bool pointingDown) {
-    final path = Path();
-    const triangleHeight = 6.0;
-
-    if (pointingDown) {
-      path.moveTo(position.dx, position.dy);
-      path.lineTo(position.dx - triangleHeight, position.dy + triangleHeight);
-      path.lineTo(position.dx + triangleHeight, position.dy + triangleHeight);
-    } else {
-      path.moveTo(position.dx, position.dy);
-      path.lineTo(position.dx - triangleHeight, position.dy - triangleHeight);
-      path.lineTo(position.dx + triangleHeight, position.dy - triangleHeight);
-    }
-
-    path.close();
-
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill,
-    );
-  }
-
-  void drawHandle(Canvas canvas, Offset position, Color color) {
-    // Draw a symmetric rectangular handle centered on the trim line
-    double handleWidth = 18.0; // 3x the original 6.0
-    double handleHeight = 30.0;
-
-    // Draw white background rectangle centered on position
-    Paint handlePaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.fill;
-
-    Rect handleRect = Rect.fromLTWH(
-      position.dx - handleWidth / 2,
-      position.dy - handleHeight / 2,
-      handleWidth,
-      handleHeight,
-    );
-
-    RRect roundedHandle = RRect.fromRectAndRadius(
-      handleRect,
-      Radius.circular(4.0),
-    );
-    canvas.drawRRect(roundedHandle, handlePaint);
-
-    // Add a colored indicator stripe in the center
-    Paint indicatorPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    Rect indicatorRect = Rect.fromLTWH(
-      position.dx - 2.0,
-      position.dy - handleHeight / 2 + 4,
-      4.0,
-      handleHeight - 8,
-    );
-
-    RRect roundedIndicator = RRect.fromRectAndRadius(
-      indicatorRect,
-      Radius.circular(2.0),
-    );
-    canvas.drawRRect(roundedIndicator, indicatorPaint);
-
-    // Draw arrows on both sides to indicate draggable direction
-    Paint arrowPaint = Paint()
-      ..color = color.withOpacity(0.7)
-      ..style = PaintingStyle.fill;
-
-    double arrowSize = 4.0;
-    double gapFromCenter = 4.0; // Gap between arrow and center trim line
-
-    // Left arrow
-    Path leftArrowPath = Path();
-    double leftArrowX = position.dx - gapFromCenter - arrowSize;
-    leftArrowPath.moveTo(leftArrowX, position.dy);
-    leftArrowPath.lineTo(leftArrowX + arrowSize, position.dy - arrowSize);
-    leftArrowPath.lineTo(leftArrowX + arrowSize, position.dy + arrowSize);
-    leftArrowPath.close();
-    canvas.drawPath(leftArrowPath, arrowPaint);
-
-    // Right arrow
-    Path rightArrowPath = Path();
-    double rightArrowX = position.dx + gapFromCenter + arrowSize;
-    rightArrowPath.moveTo(rightArrowX, position.dy);
-    rightArrowPath.lineTo(rightArrowX - arrowSize, position.dy - arrowSize);
-    rightArrowPath.lineTo(rightArrowX - arrowSize, position.dy + arrowSize);
-    rightArrowPath.close();
-    canvas.drawPath(rightArrowPath, arrowPaint);
-  }
-
-  void drawRoundedRectangleWithOpacity(Canvas canvas, double start, double end,
-      Color color, Size size, bool isStart) {
-    final radius = Radius.circular(10.0);
-    final rect = RRect.fromRectAndCorners(
-      Rect.fromPoints(Offset(start, 0), Offset(end, size.height)),
-      topLeft: isStart ? radius : Radius.zero,
-      topRight: isStart ? Radius.zero : radius,
-      bottomLeft: isStart ? radius : Radius.zero,
-      bottomRight: isStart ? Radius.zero : radius,
-    );
-    canvas.drawRRect(
-      rect,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.fill,
-    );
   }
 }
 

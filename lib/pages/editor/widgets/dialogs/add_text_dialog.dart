@@ -6,6 +6,11 @@ import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
 
 class AddTextDialog extends StatelessWidget {
+  final double? x;
+  final double? y;
+
+  const AddTextDialog({super.key, this.x, this.y});
+
   @override
   Widget build(BuildContext context) {
     return GetBuilder<EditorController>(
@@ -122,7 +127,7 @@ class AddTextDialog extends StatelessWidget {
                           onPressed: _.textToAdd != ''
                               ? () {
                                   print('DEBUG: AddTextDialog Save pressed');
-                                  _.addProjectText();
+                                  _.addProjectText(x: x, y: y);
                                   print(
                                       'DEBUG: calling Navigator.pop in AddTextDialog');
                                   Navigator.of(context).pop();

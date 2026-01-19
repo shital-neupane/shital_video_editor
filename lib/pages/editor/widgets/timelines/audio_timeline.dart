@@ -61,34 +61,50 @@ class AudioTimeline extends StatelessWidget {
                             child: CustomPaint(
                               painter: AudioWavePainter(
                                 color:
-                                    CustomColors.audioTimeline.withOpacity(0.2),
+                                    _.selectedOptions == SelectedOptions.AUDIO
+                                        ? Colors.white.withOpacity(0.8)
+                                        : CustomColors.audioTimeline
+                                            .withOpacity(0.2),
                               ),
                             ),
                           ),
-                        Padding(
-                          padding:
-                              const EdgeInsets.fromLTRB(8.0, 0.0, 16.0, 0.0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _.hasAudio ? Icons.audiotrack : Icons.add,
-                                color: CustomColors.audioTimeline,
-                              ),
-                              SizedBox(width: 4.0),
-                              Expanded(
-                                child: Text(
-                                  _.hasAudio
-                                      ? _.audioName
-                                      : translations.audioTimelineAddAudio.tr,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleSmall!
-                                      .copyWith(
-                                          color: CustomColors.audioTimeline),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Icon(
+                                  _.hasAudio ? Icons.audiotrack : Icons.add,
+                                  color: CustomColors.audioTimeline,
                                 ),
-                              ),
-                            ],
+                                SizedBox(width: 4.0),
+                                Flexible(
+                                  child: Text(
+                                    _.hasAudio
+                                        ? _.audioName
+                                        : translations.audioTimelineAddAudio.tr,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall!
+                                        .copyWith(
+                                      color: CustomColors.audioTimeline,
+                                      shadows: [
+                                        Shadow(
+                                          blurRadius: 3.0,
+                                          color: Colors.black,
+                                          offset: Offset(1.0, 1.0),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -134,5 +150,6 @@ class AudioWavePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant AudioWavePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
