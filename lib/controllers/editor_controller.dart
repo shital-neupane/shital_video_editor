@@ -31,6 +31,8 @@ class EditorController extends GetxController {
   // Cached project media file.
   File? projectMediaFile;
 
+  static const int maxDurationMs = 90000; // 1 min 30 sec
+
   static EditorController get to => Get.find();
 
   bool get isMediaNetworkPath => isNetworkPath(project.mediaUrl);
@@ -392,6 +394,7 @@ class EditorController extends GetxController {
       _videoController!.setVolume(masterVolume);
 
       // If the trim end is 0, set it to the video duration.
+      // If the trim end is 0, set it to the video duration.
       if (project.transformations.trimEnd == Duration.zero) {
         project.transformations.trimEnd = _videoController!.value.duration;
       }
@@ -604,6 +607,17 @@ class EditorController extends GetxController {
   }
 
   setTrimStart() {
+    // Check if new trim start would result in duration > maxDurationMs
+    if (trimEnd - _position!.inMilliseconds > maxDurationMs) {
+      showSnackbar(
+        Theme.of(Get.context!).colorScheme.error,
+        translations.deniedOperationErrorTitle.tr,
+        "Video duration cannot exceed 1 min 30 sec", // You might want to add a translation key for this
+        Icons.error_outline,
+      );
+      return;
+    }
+
     if (_position!.inMilliseconds < trimEnd) {
       project.transformations.trimStart = _position!;
     } else {
@@ -618,6 +632,17 @@ class EditorController extends GetxController {
   }
 
   setTrimEnd() {
+    // Check if new trim end would result in duration > maxDurationMs
+    if (_position!.inMilliseconds - trimStart > maxDurationMs) {
+      showSnackbar(
+        Theme.of(Get.context!).colorScheme.error,
+        translations.deniedOperationErrorTitle.tr,
+        "Video duration cannot exceed 1 min 30 sec",
+        Icons.error_outline,
+      );
+      return;
+    }
+
     if (_position!.inMilliseconds > trimStart) {
       project.transformations.trimEnd = _position!;
     } else {

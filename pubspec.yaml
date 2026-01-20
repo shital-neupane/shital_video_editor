@@ -32,6 +32,7 @@ dependencies:
   flex_color_picker: ^3.3.1             # Used for font and background text color picker
   shared_preferences: ^2.2.2            # Used for storing user preferences (theme, language, etc.)
   url_launcher: ^6.3.1
+  video_compress: ^3.1.2                # Used for compressing the video after export
 
 dev_dependencies:
   flutter_test:

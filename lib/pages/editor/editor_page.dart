@@ -12,6 +12,9 @@ import 'package:shital_video_editor/pages/editor/widgets/timelines/video_timelin
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/custom_painters.dart';
 import 'package:shital_video_editor/shared/helpers/video.dart';
+import 'package:shital_video_editor/shared/helpers/snackbar.dart';
+import 'package:shital_video_editor/shared/translations/translation_keys.dart'
+    as translations;
 
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
@@ -90,7 +93,18 @@ class EditorPage extends GetView<EditorController> {
                   icon: Icon(Icons.file_upload_outlined, size: 26.0),
                   color: Theme.of(context).colorScheme.onBackground,
                   onPressed: () {
-                    _showBottomSheet(context);
+                    // Check video duration before showing export sheet
+                    if (EditorController.to.afterExportVideoDuration >
+                        EditorController.maxDurationMs) {
+                      showSnackbar(
+                        Theme.of(context).colorScheme.error,
+                        translations.deniedOperationErrorTitle.tr,
+                        "Max video length is 1 min 30 seconds",
+                        Icons.error_outline,
+                      );
+                    } else {
+                      _showBottomSheet(context);
+                    }
                   },
                   splashRadius: 20.0,
                 ),

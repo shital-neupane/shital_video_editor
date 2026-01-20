@@ -245,6 +245,11 @@ class _VideoTimelineState extends State<VideoTimeline> {
     if (newStartMs >= currentEndMs - 100) {
       newStartMs = currentEndMs - 100;
     }
+    // 3. Max duration check: trimEnd - newStart <= maxDurationMs
+    // newStart >= trimEnd - maxDurationMs
+    if (newStartMs < currentEndMs - EditorController.maxDurationMs) {
+      newStartMs = currentEndMs - EditorController.maxDurationMs;
+    }
 
     controller.project.transformations.trimStart =
         Duration(milliseconds: newStartMs);
@@ -269,6 +274,10 @@ class _VideoTimelineState extends State<VideoTimeline> {
     // 2. Min must be greater than start (with min duration check)
     if (newEndMs <= currentStartMs + 100) {
       newEndMs = currentStartMs + 100;
+    }
+    // 3. Max duration check: newEnd - trimStart <= maxDurationMs
+    if (newEndMs > currentStartMs + EditorController.maxDurationMs) {
+      newEndMs = currentStartMs + EditorController.maxDurationMs;
     }
 
     controller.project.transformations.trimEnd =

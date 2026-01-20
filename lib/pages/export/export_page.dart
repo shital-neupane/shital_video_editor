@@ -21,8 +21,8 @@ class ExportPage extends StatelessWidget {
 
   void _exitWithOutput(BuildContext context) {
     Navigator.popUntil(context, (route) => route.isFirst);
-    Navigator.of(context, rootNavigator: true)
-        .pop(File(_exportController.outputPath));
+    Navigator.of(context, rootNavigator: true).pop(
+        _exportController.compressedFile ?? File(_exportController.outputPath));
   }
 
   @override
@@ -85,14 +85,19 @@ class ExportPage extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(translations.exportPageLoadingTitle.tr,
+            Text(
+                _exportController.isCompressing.value
+                    ? "Compressing Video..."
+                    : translations.exportPageLoadingTitle.tr,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center),
             SizedBox(height: 8.0),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
-                translations.exportPageLoadingSubtitle.tr,
+                _exportController.isCompressing.value
+                    ? _exportController.progressLabel.value
+                    : translations.exportPageLoadingSubtitle.tr,
                 style: Theme.of(context).textTheme.bodyMedium,
                 textAlign: TextAlign.center,
               ),
@@ -105,9 +110,13 @@ class ExportPage extends StatelessWidget {
               backgroundColor:
                   Theme.of(context).primaryColorLight.withOpacity(0.5),
               circularStrokeCap: CircularStrokeCap.round,
-              percent: _exportController.exportProgress.value,
+              percent: _exportController.isCompressing.value
+                  ? _exportController.compressionProgress.value
+                  : _exportController.exportProgress.value,
               center: Text(
-                '${(_exportController.exportProgress.value * 100).toStringAsFixed(2)}%',
+                _exportController.isCompressing.value
+                    ? "${(_exportController.compressionProgress.value * 100).toStringAsFixed(0)}%"
+                    : '${(_exportController.exportProgress.value * 100).toStringAsFixed(2)}%',
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium!
