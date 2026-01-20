@@ -53,18 +53,19 @@ class ExportController extends GetxController {
       final returnCode = await session.getReturnCode();
 
       if (ReturnCode.isSuccess(returnCode)) {
-        isExporting.value = false;
-
+        // Save to gallery first
         SaverGallery.saveFile(
           filePath: outputPath,
           fileName: 'video_export',
           skipIfExists: false,
-        ).then((saved) {
+        ).then((saved) async {
           if (saved != null) {
             isSavingToGallery.value = false;
           }
-          // Start compression after saving to gallery
-          _compressVideo();
+          // Start compression after saving to gallery and await completion
+          await _compressVideo();
+          // Only mark export as complete after compression finishes
+          isExporting.value = false;
         });
       } else if (ReturnCode.isCancel(returnCode)) {
         print('VIDEO EXPORT CANCELLED ${session.getLogsAsString()}');
@@ -100,26 +101,45 @@ class ExportController extends GetxController {
         progressLabel.value = "Compressing ${progress.ceil()}%";
       });
 
+      // Debug: Check if input file exists
+      final inputFile = File(outputPath);
+      print("DEBUG: search Input path: $outputPath");
+      print("DEBUG: search Input file exists: ${inputFile.existsSync()}");
+      if (inputFile.existsSync()) {
+        print(
+            "DEBUG: search Input file size: ${(inputFile.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
+      }
+
       final compressedMediaInfo = await VideoCompress.compressVideo(
         outputPath,
-        quality: VideoQuality.HighestQuality,
+        quality: VideoQuality.MediumQuality, // Try lower quality first
         deleteOrigin: false,
         includeAudio: true,
       );
+
+      // Debug: Log full result
+      print("DEBUG: search compressedMediaInfo: $compressedMediaInfo");
+      print(
+          "DEBUG: search compressedMediaInfo?.file: ${compressedMediaInfo?.file}");
+      print(
+          "DEBUG: search compressedMediaInfo?.path: ${compressedMediaInfo?.path}");
 
       if (compressedMediaInfo != null && compressedMediaInfo.file != null) {
         compressedFile = compressedMediaInfo.file;
         print(
             "Video Compression Success: ${(compressedFile!.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
       } else {
-        print("Compression failed!");
+        print(
+            "DEBUG: search Compression failed! MediaInfo was null or file was null");
+        // Fallback: use original file if compression fails
+        compressedFile = inputFile;
+        print("DEBUG: seatch Fallback: Using original file instead");
       }
     } catch (e) {
-      print("Error during compression: $e");
+      print("DEBUG: Error during compression: $e");
     } finally {
       _compressionSubscription?.unsubscribe();
       isCompressing.value = false;
-      isExporting.value = false;
     }
   }
 

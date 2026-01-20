@@ -1292,7 +1292,8 @@ class EditorController extends GetxController {
     }
 
     // Generate the FFMPEG command and navigate to the export page.
-    String dateTime = DateFormat('yyyyMMdd_HH:mm:ss').format(DateTime.now());
+    // Use underscores instead of colons - colons are illegal in Android file paths
+    String dateTime = DateFormat('yyyyMMdd_HH_mm_ss').format(DateTime.now());
     String outputPath = await generateOutputPath('${project.name}_$dateTime');
 
     // Get the font scaling factor. Video height / in app height if vertical. Video width / in app width if horizontal.
