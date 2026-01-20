@@ -14,7 +14,8 @@ class AudioTimeline extends StatelessWidget {
     return GetBuilder<EditorController>(
       builder: (_) {
         return _.isVideoInitialized
-            ? _audioTimeline(context, _.videoDurationMs / 1000 * 50.0)
+            ? _audioTimeline(
+                context, (_.trimEnd - _.trimStart) / 1000 * _.timelineScale)
             : SizedBox.shrink();
       },
     );
@@ -65,17 +66,20 @@ class AudioTimeline extends StatelessWidget {
                                         ? Colors.white.withOpacity(0.8)
                                         : CustomColors.audioTimeline
                                             .withOpacity(0.2),
+                                msTrimStart: _.trimStart,
+                                msTrimEnd: _.trimEnd,
+                                timelineScale: _.timelineScale,
                               ),
                             ),
                           ),
                         Align(
-                          alignment: Alignment.centerRight,
+                          alignment: Alignment.centerLeft,
                           child: Padding(
                             padding:
-                                const EdgeInsets.fromLTRB(16.0, 0.0, 8.0, 0.0),
+                                const EdgeInsets.fromLTRB(8.0, 0.0, 16.0, 0.0),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
-                              mainAxisAlignment: MainAxisAlignment.end,
+                              mainAxisAlignment: MainAxisAlignment.start,
                               children: [
                                 Icon(
                                   _.hasAudio ? Icons.audiotrack : Icons.add,
@@ -123,8 +127,16 @@ class AudioTimeline extends StatelessWidget {
 
 class AudioWavePainter extends CustomPainter {
   final Color color;
+  final int msTrimStart;
+  final int msTrimEnd;
+  final double timelineScale;
 
-  AudioWavePainter({required this.color});
+  AudioWavePainter({
+    required this.color,
+    required this.msTrimStart,
+    required this.msTrimEnd,
+    required this.timelineScale,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -136,8 +148,18 @@ class AudioWavePainter extends CustomPainter {
     final double barGap = 6.0;
     final int barCount = (size.width / barGap).ceil();
 
+    final double trimStartPx = (msTrimStart / 1000) * timelineScale;
+    final double trimEndPx = (msTrimEnd / 1000) * timelineScale;
+
+    canvas.save();
+    canvas.translate(-trimStartPx, 0);
+
     for (int i = 0; i < barCount; i++) {
       final double x = i * barGap;
+
+      // Only draw if within trim range
+      if (x < trimStartPx || x > trimEndPx) continue;
+
       final double h = i % 2 == 0 ? size.height * 0.7 : size.height * 0.4;
       final double y = (size.height - h) / 2;
 
@@ -147,9 +169,13 @@ class AudioWavePainter extends CustomPainter {
         paint,
       );
     }
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant AudioWavePainter oldDelegate) =>
-      oldDelegate.color != color;
+      oldDelegate.color != color ||
+      oldDelegate.msTrimStart != msTrimStart ||
+      oldDelegate.msTrimEnd != msTrimEnd ||
+      oldDelegate.timelineScale != timelineScale;
 }

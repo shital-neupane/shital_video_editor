@@ -9,17 +9,17 @@ class ThumbnailService {
   /// Returns lower FPS for longer videos to limit thumbnail count
   static double calculateOptimalFPS(double durationSeconds) {
     if (durationSeconds <= 60) {
-      // Short videos (≤1 min): 1 thumbnail per second
-      return 1.0;
+      // Short videos (≤1 min): 4 thumbnails per second for smooth zoom
+      return 4.0;
     } else if (durationSeconds <= 300) {
-      // Medium videos (1-5 min): 1 thumbnail per 2 seconds
-      return 0.5;
+      // Medium videos (1-5 min): 2 thumbnails per second
+      return 2.0;
     } else if (durationSeconds <= 600) {
-      // Long videos (5-10 min): 1 thumbnail per 3 seconds
-      return 0.33;
+      // Long videos (5-10 min): 1 thumbnail per second
+      return 1.0;
     } else {
-      // Very long videos (>10 min): 1 thumbnail per 5 seconds
-      return 0.2;
+      // Very long videos (>10 min): 1 thumbnail per 2 seconds
+      return 0.5;
     }
   }
 

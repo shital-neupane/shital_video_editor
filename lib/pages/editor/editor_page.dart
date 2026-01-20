@@ -168,7 +168,7 @@ class EditorPage extends GetView<EditorController> {
                                   ? _.texts.map((TextTransformation text) {
                                       if (text.shouldDisplay(_.msVideoPosition))
                                         return _getTextOverlay(
-                                            text, constraints);
+                                            text, constraints, _);
                                       return SizedBox.shrink();
                                     }).toList()
                                   : [SizedBox.shrink(), SizedBox.shrink()],
@@ -278,67 +278,79 @@ class EditorPage extends GetView<EditorController> {
 
   _videoTimeline(BuildContext context) {
     return GetBuilder<EditorController>(builder: (_) {
-      return Stack(
-        children: [
-          CustomPaint(
-            painter: LinePainter(_.videoPosition),
-            child: Container(
-              height: 85.0,
-            ),
-          ),
-          Column(
-            children: [
-              // Video Timeline
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: _.isTimelineScrollLocked
-                    ? const NeverScrollableScrollPhysics()
-                    : const BouncingScrollPhysics(
-                        parent: AlwaysScrollableScrollPhysics()),
-                controller: _.scrollController,
-                child: Column(
-                  children: [
-                    // -------------------------------
-                    //        Video Timeline (secs)
-                    // -------------------------------
-                    Row(
-                      children: [
-                        SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.5),
-                        ...List.generate(
-                          _.videoDuration.toInt() + 1,
-                          (index) {
-                            if (index == _.videoDuration.toInt()) {
-                              return _lastSecondContainerTimeline(
-                                  context,
-                                  index,
-                                  (_.videoDurationMs % 1000) / 1000 * 50.0);
-                            } else {
-                              return _secondContainerTimeline(context, index);
-                            }
-                          },
-                        ),
-                        SizedBox(
-                            width: MediaQuery.of(context).size.width * 0.5),
-                      ],
-                    ),
-                    SizedBox(height: 12.0),
-                    VideoTimeline(),
-                    SizedBox(height: 12.0),
-                    AudioTimeline(),
-                    SizedBox(height: 12.0),
-                    TextTimeline()
-                  ],
-                ),
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onScaleStart: (details) => _.onScaleStart(),
+        onScaleUpdate: (details) => _.onScaleUpdate(details.scale),
+        onScaleEnd: (details) => _.onScaleEnd(),
+        child: Stack(
+          children: [
+            CustomPaint(
+              painter: LinePainter(_.videoPosition),
+              child: Container(
+                height: 85.0,
               ),
-            ],
-          ),
-        ],
+            ),
+            Column(
+              children: [
+                // Video Timeline
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  physics: _.isTimelineScrollLocked
+                      ? const NeverScrollableScrollPhysics()
+                      : const BouncingScrollPhysics(
+                          parent: AlwaysScrollableScrollPhysics()),
+                  controller: _.scrollController,
+                  child: Column(
+                    children: [
+                      // -------------------------------
+                      //        Video Timeline (secs)
+                      // -------------------------------
+                      Row(
+                        children: [
+                          SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.5),
+                          ...List.generate(
+                            ((_.trimEnd - _.trimStart) / 1000).toInt() + 1,
+                            (index) {
+                              if (index ==
+                                  ((_.trimEnd - _.trimStart) / 1000).toInt()) {
+                                return _lastSecondContainerTimeline(
+                                    context,
+                                    index,
+                                    (((_.trimEnd - _.trimStart) % 1000) /
+                                            1000) *
+                                        _.timelineScale,
+                                    _);
+                              } else {
+                                return _secondContainerTimeline(
+                                    context, index, _);
+                              }
+                            },
+                          ),
+                          SizedBox(
+                              width: MediaQuery.of(context).size.width * 0.5),
+                        ],
+                      ),
+                      SizedBox(height: 12.0),
+                      VideoTimeline(),
+                      SizedBox(height: 12.0),
+                      AudioTimeline(),
+                      SizedBox(height: 12.0),
+                      TextTimeline()
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       );
     });
   }
 
-  _secondContainerTimeline(BuildContext context, int index) {
+  _secondContainerTimeline(
+      BuildContext context, int index, EditorController controller) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -352,7 +364,9 @@ class EditorPage extends GetView<EditorController> {
               width: 1.0),
         ),
       ),
-      width: 50.0, // Adjust the width of each timeline item
+      width: index == 0
+          ? controller.timelineScale
+          : controller.timelineScale, // Adjust the width of each timeline item
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 0.0),
         child: Row(
@@ -390,7 +404,8 @@ class EditorPage extends GetView<EditorController> {
     );
   }
 
-  _lastSecondContainerTimeline(BuildContext context, int index, double width) {
+  _lastSecondContainerTimeline(BuildContext context, int index, double width,
+      EditorController controller) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -455,7 +470,8 @@ class EditorPage extends GetView<EditorController> {
     );
   }
 
-  Widget _getTextOverlay(TextTransformation text, BoxConstraints constraints) {
+  Widget _getTextOverlay(TextTransformation text, BoxConstraints constraints,
+      EditorController controller) {
     if (text.x != null && text.y != null) {
       return Positioned(
         left: text.x! * constraints.maxWidth,

@@ -53,10 +53,12 @@ class _VideoTimelineState extends State<VideoTimeline> {
           return const SizedBox.shrink();
         }
 
-        // Calculate positions based on current trim values
-        double startHandlePosition = (controller.trimStart / 1000.0) * 50.0;
-        double endHandlePosition = (controller.trimEnd / 1000.0) * 50.0;
-        double timelineWidth = (controller.videoDurationMs / 1000.0) * 50.0;
+        // Calculate positions based on current trim values (relative to start of the widget)
+        double startHandlePosition = 0;
+        double endHandlePosition =
+            ((controller.trimEnd - controller.trimStart) / 1000.0) *
+                controller.timelineScale;
+        double timelineWidth = endHandlePosition;
 
         // Base timeline widget with thumbnails
         Widget timelineContent = FutureBuilder<ui.Image?>(
@@ -83,6 +85,9 @@ class _VideoTimelineState extends State<VideoTimeline> {
                       columns: gridSize[0],
                       rows: gridSize[1],
                       timelineWidth: timelineWidth,
+                      msTrimStart: controller.trimStart,
+                      msTrimEnd: controller.trimEnd,
+                      timelineScale: controller.timelineScale,
                     ),
                     size: Size(timelineWidth, 50.0),
                   ),
@@ -93,6 +98,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
                     controller.trimEnd,
                     isTrimmingMode:
                         controller.selectedOptions == SelectedOptions.TRIM,
+                    timelineScale: controller.timelineScale,
                   ),
                   child: Container(
                     width: timelineWidth,
@@ -225,7 +231,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
 
   void _updateTrimStart(EditorController controller, double deltaPixels) {
     // Convert pixel delta to milliseconds
-    double deltaMs = (deltaPixels / 50.0) * 1000;
+    double deltaMs = (deltaPixels / controller.timelineScale) * 1000;
 
     int newStartMs = controller.trimStart + deltaMs.toInt();
     int currentEndMs = controller.trimEnd;
@@ -250,7 +256,7 @@ class _VideoTimelineState extends State<VideoTimeline> {
 
   void _updateTrimEnd(EditorController controller, double deltaPixels) {
     // Convert pixel delta to milliseconds
-    double deltaMs = (deltaPixels / 50.0) * 1000;
+    double deltaMs = (deltaPixels / controller.timelineScale) * 1000;
 
     int newEndMs = controller.trimEnd + deltaMs.toInt();
     int currentStartMs = controller.trimStart;

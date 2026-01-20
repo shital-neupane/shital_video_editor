@@ -28,38 +28,24 @@ class TrimPainter extends CustomPainter {
   final int msTrimStart;
   final int msTrimEnd;
   final bool isTrimmingMode;
+  final double timelineScale;
 
-  TrimPainter(this.msTrimStart, this.msTrimEnd, {this.isTrimmingMode = false});
+  TrimPainter(this.msTrimStart, this.msTrimEnd,
+      {this.isTrimmingMode = false, this.timelineScale = 50.0});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Calculate the x-coordinates for trim start and trim end lines
-    double startX = (msTrimStart / 1000) * 50.0;
-    double endX = (msTrimEnd / 1000) * 50.0;
-
-    endX = endX.clamp(0.0, size.width);
-    startX = startX.clamp(0.0, size.width);
+    // Handles are now drawn at relative positions:
+    // Start handle at 0, End handle at size.width (the trimmed duration)
+    double startX = 0;
+    double endX = size.width;
 
     // Instagram style frame color (Purple/Violet)
     const Color frameColor = Color(0xFF9C27B0); // Purple
     const double handleWidth = 20.0;
     const double lineWidth = 2.0;
 
-    // Draw the background region that is trimmed out (before start and after end)
-    // Using a more opaque black to "only display the part that will remain"
-    Paint overlayPaint = Paint()..color = Colors.black.withOpacity(0.7);
-
-    if (startX > 0) {
-      canvas.drawRect(Rect.fromLTWH(0, 0, startX, size.height), overlayPaint);
-    }
-
-    if (endX < size.width) {
-      canvas.drawRect(
-          Rect.fromLTWH(endX, 0, size.width - endX, size.height), overlayPaint);
-    }
-
-    // Only draw the frame if in trimming mode or always? User said "for trim handles".
-    // Usually, we want to see it clearly when in TRIM mode.
+    // Only draw the frame if in trimming mode
     if (isTrimmingMode) {
       Paint framePaint = Paint()
         ..color = frameColor
@@ -68,7 +54,7 @@ class TrimPainter extends CustomPainter {
       // Draw Start Handle (Thick vertical bar)
       canvas.drawRRect(
         RRect.fromRectAndCorners(
-          Rect.fromLTWH(startX - handleWidth / 2, 0, handleWidth, size.height),
+          Rect.fromLTWH(startX, 0, handleWidth, size.height),
           topLeft: const Radius.circular(8.0),
           bottomLeft: const Radius.circular(8.0),
         ),
@@ -78,7 +64,7 @@ class TrimPainter extends CustomPainter {
       // Draw End Handle (Thick vertical bar)
       canvas.drawRRect(
         RRect.fromRectAndCorners(
-          Rect.fromLTWH(endX - handleWidth / 2, 0, handleWidth, size.height),
+          Rect.fromLTWH(endX - handleWidth, 0, handleWidth, size.height),
           topRight: const Radius.circular(8.0),
           bottomRight: const Radius.circular(8.0),
         ),
@@ -87,20 +73,23 @@ class TrimPainter extends CustomPainter {
 
       // Draw Top line
       canvas.drawRect(
-        Rect.fromLTWH(startX, 0, endX - startX, lineWidth),
+        Rect.fromLTWH(startX + handleWidth, 0, endX - startX - handleWidth * 2,
+            lineWidth),
         framePaint,
       );
 
       // Draw Bottom line
       canvas.drawRect(
-        Rect.fromLTWH(
-            startX, size.height - lineWidth, endX - startX, lineWidth),
+        Rect.fromLTWH(startX + handleWidth, size.height - lineWidth,
+            endX - startX - handleWidth * 2, lineWidth),
         framePaint,
       );
 
       // Add a small detail: vertical grip lines on the thicker handles
-      _drawGrip(canvas, Offset(startX, size.height / 2), Colors.white38);
-      _drawGrip(canvas, Offset(endX, size.height / 2), Colors.white38);
+      _drawGrip(canvas, Offset(startX + handleWidth / 2, size.height / 2),
+          Colors.white38);
+      _drawGrip(canvas, Offset(endX - handleWidth / 2, size.height / 2),
+          Colors.white38);
     }
   }
 
@@ -126,7 +115,8 @@ class TrimPainter extends CustomPainter {
     if (oldDelegate is TrimPainter) {
       return msTrimStart != oldDelegate.msTrimStart ||
           msTrimEnd != oldDelegate.msTrimEnd ||
-          isTrimmingMode != oldDelegate.isTrimmingMode;
+          isTrimmingMode != oldDelegate.isTrimmingMode ||
+          timelineScale != oldDelegate.timelineScale;
     }
     return true;
   }

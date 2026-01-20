@@ -18,7 +18,8 @@ class TextTimeline extends StatelessWidget {
     return GetBuilder<EditorController>(
       builder: (_) {
         return _.isVideoInitialized
-            ? _textTimeline(context, _.videoDurationMs / 1000 * 50.0)
+            ? _textTimeline(
+                context, (_.trimEnd - _.trimStart) / 1000 * _.timelineScale)
             : SizedBox.shrink();
       },
     );
@@ -84,10 +85,39 @@ class TextTimeline extends StatelessWidget {
                               TextTransformation text = _.texts[i];
                               bool isTextSelected = _.selectedTextId == text.id;
 
+                              // Calculate relative start
+                              double relativeStartMs =
+                                  (text.msStartTime - _.trimStart).toDouble();
+
+                              // Skip if the text is completely outside the trim range
+                              if (text.msStartTime + text.msDuration <=
+                                      _.trimStart ||
+                                  text.msStartTime >= _.trimEnd) {
+                                return const SizedBox.shrink();
+                              }
+
+                              // Clip start if it starts before trimStart
+                              double startGap =
+                                  relativeStartMs < 0 ? 0 : relativeStartMs;
+                              double clippedDuration =
+                                  text.msDuration.toDouble();
+                              if (text.msStartTime < _.trimStart) {
+                                clippedDuration -=
+                                    (_.trimStart - text.msStartTime);
+                              }
+                              // Clip end if it ends after trimEnd
+                              if (text.msStartTime + text.msDuration >
+                                  _.trimEnd) {
+                                clippedDuration -= (text.msStartTime +
+                                    text.msDuration -
+                                    _.trimEnd);
+                              }
+
                               return Row(
                                 children: [
                                   Container(
-                                      width: (text.msStartTime / 1000 * 50.0)),
+                                      width:
+                                          (startGap / 1000 * _.timelineScale)),
                                   InkWell(
                                     onTap: () {
                                       if (_.selectedOptions !=
@@ -104,8 +134,8 @@ class TextTimeline extends StatelessWidget {
                                       clipBehavior: Clip.none,
                                       children: [
                                         Container(
-                                          width: ((text.msDuration / 1000) *
-                                                  50.0) -
+                                          width: ((clippedDuration / 1000) *
+                                                  _.timelineScale) -
                                               4.0,
                                           height: 50.0,
                                           decoration: BoxDecoration(
@@ -157,6 +187,7 @@ class TextTimeline extends StatelessWidget {
                                                 0, // start relative to container
                                                 text.msDuration,
                                                 isTrimmingMode: true,
+                                                timelineScale: _.timelineScale,
                                               ),
                                             ),
                                           ),
@@ -172,7 +203,7 @@ class TextTimeline extends StatelessWidget {
                                                   (details) {
                                                 int deltaMs =
                                                     (details.delta.dx /
-                                                            50.0 *
+                                                            _.timelineScale *
                                                             1000)
                                                         .toInt();
                                                 _.updateTextStartDelta(
@@ -194,7 +225,7 @@ class TextTimeline extends StatelessWidget {
                                                   (details) {
                                                 int deltaMs =
                                                     (details.delta.dx /
-                                                            50.0 *
+                                                            _.timelineScale *
                                                             1000)
                                                         .toInt();
                                                 _.updateTextDurationDelta(

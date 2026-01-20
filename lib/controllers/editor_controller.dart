@@ -42,6 +42,8 @@ class EditorController extends GetxController {
   ScrollController scrollController = ScrollController();
 
   Duration? _position = Duration(seconds: 0);
+  double timelineScale = 50.0;
+  double _baseScale = 50.0;
   bool isTimelineScrollLocked = false;
   bool _isUserScrolling = false;
   bool _isAutoScrolling = false;
@@ -427,7 +429,10 @@ class EditorController extends GetxController {
         if (!_isUserScrolling &&
             _position != previousPos &&
             now.difference(_lastManualSeekTime).inMilliseconds > 150) {
-          double scrollPosition = ((_position!.inMilliseconds) * 0.001 * 50.0);
+          // Calculate relative position from trimStart
+          double relativeMs =
+              (_position!.inMilliseconds - trimStart).toDouble();
+          double scrollPosition = (relativeMs * 0.001 * timelineScale);
           _jumpTimeline(scrollPosition);
         }
 
@@ -446,13 +451,14 @@ class EditorController extends GetxController {
         if (isVideoPlaying) {
           pauseVideo();
         }
-        final double positionSeconds = scrollController.position.pixels / 50.0;
-        final int targetMs = (positionSeconds * 1000).toInt();
+        final double relativeSeconds =
+            scrollController.position.pixels / timelineScale;
+        final int targetMs = (relativeSeconds * 1000).toInt() + trimStart;
 
         if (targetMs != _lastSeekMs) {
           _lastSeekMs = targetMs;
           // Lightweight seek for smoothness during the scroll
-          updateVideoPosition(positionSeconds, shouldUpdate: false);
+          updateVideoPosition(targetMs / 1000.0, shouldUpdate: false);
           update(['timeline_position']);
         }
 
@@ -461,7 +467,7 @@ class EditorController extends GetxController {
         _scrollDebounceTimer = Timer(const Duration(milliseconds: 500), () {
           // Final sync after 500ms of inactivity
           if (!_isAutoScrolling) {
-            updateVideoPosition(positionSeconds, shouldUpdate: true);
+            updateVideoPosition(targetMs / 1000.0, shouldUpdate: true);
           }
         });
       } else if (_isUserScrolling) {
@@ -646,7 +652,7 @@ class EditorController extends GetxController {
     _position = Duration(milliseconds: trimStart);
     _lastManualSeekTime = DateTime.now();
     _videoController!.seekTo(_position!);
-    _jumpTimeline(trimStart * 0.001 * 50.0);
+    _jumpTimeline(0);
     if (isAudioInitialized) {
       _audioPlayer.seek(audioStart);
       _audioPlayer.pause();
@@ -795,6 +801,70 @@ class EditorController extends GetxController {
     project.transformations.texts
         .firstWhere((element) => element.id == selectedTextId)
         .msDuration = trimEnd - msVideoPosition;
+    update();
+  }
+
+  void updateTimelineScale(double newScale) {
+    // Basic scale update logic
+    timelineScale = newScale.clamp(10.0, 1000.0);
+    update();
+  }
+
+  void onScaleStart() {
+    _baseScale = timelineScale;
+    isTimelineScrollLocked = true;
+    _isUserScrolling = true;
+
+    // Capture the time at the playhead to anchor the zoom
+    // or capture the time at the center of the viewport
+    if (scrollController.hasClients) {
+      double pixels = scrollController.offset;
+      _anchoredTimeMs = (pixels / timelineScale * 1000).toInt();
+    } else {
+      _anchoredTimeMs = 0;
+    }
+
+    update();
+  }
+
+  int _anchoredTimeMs = 0;
+
+  void onScaleUpdate(double scale) {
+    if (!scrollController.hasClients) {
+      updateTimelineScale(_baseScale * scale);
+      return;
+    }
+
+    double oldScale = timelineScale;
+    double newScale = (_baseScale * scale).clamp(10.0, 1000.0);
+
+    if (oldScale == newScale) return;
+
+    // Position of the anchored time in pixels before scaling
+    double oldPixels = (_anchoredTimeMs * 0.001 * oldScale);
+    // Offset from the start of the viewport
+    double viewportOffset = oldPixels - scrollController.offset;
+
+    // Update the scale
+    timelineScale = newScale;
+
+    // Position of the anchored time in pixels after scaling
+    double newPixels = (_anchoredTimeMs * 0.001 * newScale);
+    // New scroll offset to keep the anchored time at the same viewport position
+    double newScrollOffset = newPixels - viewportOffset;
+
+    _jumpTimeline(newScrollOffset.clamp(
+        0.0,
+        scrollController.position.maxScrollExtent +
+            2000)); // allow some overscroll during gesture
+
+    update();
+  }
+
+  void onScaleEnd() {
+    isTimelineScrollLocked = false;
+    _isUserScrolling = false;
+    _anchoredTimeMs = 0;
     update();
   }
 
