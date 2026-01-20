@@ -835,16 +835,31 @@ class EditorController extends GetxController {
     update();
   }
 
-  void onScaleStart() {
-    _baseScale = timelineScale;
-    isTimelineScrollLocked = true;
-    _isUserScrolling = true;
+  // Focal point for gesture-centered zooming
+  double _focalPointX = 0.0;
+  int _anchoredTimeMs = 0;
+  double _lastScale = 1.0;
 
-    // Capture the time at the playhead to anchor the zoom
-    // or capture the time at the center of the viewport
+  void onScaleStart(ScaleStartDetails details) {
+    // Always capture the focal point, even for potential two-finger gestures
+    _baseScale = timelineScale;
+    _lastScale = 1.0;
+    _focalPointX = details.localFocalPoint.dx;
+
+    if (details.pointerCount >= 2) {
+      isTimelineScrollLocked = true;
+      _isUserScrolling = true;
+    }
+
+    // Calculate the anchored time based on the focal point position
     if (scrollController.hasClients) {
-      double pixels = scrollController.offset;
-      _anchoredTimeMs = (pixels / timelineScale * 1000).toInt();
+      // Calculate the time at the focal point (not at the start of viewport)
+      double viewportWidth = Get.width;
+      double focalOffsetFromCenter = _focalPointX - (viewportWidth / 2);
+      double pixelsAtFocalPoint =
+          scrollController.offset + focalOffsetFromCenter;
+      _anchoredTimeMs = (pixelsAtFocalPoint / timelineScale * 1000).toInt();
+      if (_anchoredTimeMs < 0) _anchoredTimeMs = 0;
     } else {
       _anchoredTimeMs = 0;
     }
@@ -852,44 +867,83 @@ class EditorController extends GetxController {
     update();
   }
 
-  int _anchoredTimeMs = 0;
+  void onScaleUpdate(ScaleUpdateDetails details) {
+    // Handle transition from one finger to two fingers mid-gesture
+    if (details.pointerCount >= 2 && !isTimelineScrollLocked) {
+      _baseScale = timelineScale / details.scale;
+      _lastScale = details.scale;
+      isTimelineScrollLocked = true;
+      _isUserScrolling = true;
+      _focalPointX = details.localFocalPoint.dx;
 
-  void onScaleUpdate(double scale) {
+      if (scrollController.hasClients) {
+        double viewportWidth = Get.width;
+        double focalOffsetFromCenter = _focalPointX - (viewportWidth / 2);
+        double pixelsAtFocalPoint =
+            scrollController.offset + focalOffsetFromCenter;
+        _anchoredTimeMs = (pixelsAtFocalPoint / timelineScale * 1000).toInt();
+        if (_anchoredTimeMs < 0) _anchoredTimeMs = 0;
+      } else {
+        _anchoredTimeMs = 0;
+      }
+      update();
+      return;
+    }
+
+    if (!isTimelineScrollLocked) return;
+    if (details.pointerCount < 2) return;
+
+    // Use incremental scaling for smoother updates
+    double scaleDelta = details.scale / _lastScale;
+    _lastScale = details.scale;
+
+    // Apply an incremental scale with smoothing factor
+    // This makes both fast and slow gestures feel responsive
+    double smoothingFactor = 1.0; // Direct mapping for responsiveness
+    double targetScale =
+        timelineScale * (1.0 + (scaleDelta - 1.0) * smoothingFactor);
+    double newScale = targetScale.clamp(10.0, 1000.0);
+
+    if ((newScale - timelineScale).abs() < 0.01) return;
+
     if (!scrollController.hasClients) {
-      updateTimelineScale(_baseScale * scale);
+      timelineScale = newScale;
+      update();
       return;
     }
 
     double oldScale = timelineScale;
-    double newScale = (_baseScale * scale).clamp(10.0, 1000.0);
 
-    if (oldScale == newScale) return;
+    // Calculate focal point relative to the center of the viewport
+    double viewportWidth = Get.width;
+    double focalOffsetFromCenter =
+        details.localFocalPoint.dx - (viewportWidth / 2);
 
-    // Position of the anchored time in pixels before scaling
-    double oldPixels = (_anchoredTimeMs * 0.001 * oldScale);
-    // Offset from the start of the viewport
-    double viewportOffset = oldPixels - scrollController.offset;
+    // Calculate the time position at the focal point before scaling
+    double pixelsAtFocalPoint = scrollController.offset + focalOffsetFromCenter;
+    double timeAtFocalPoint = pixelsAtFocalPoint / oldScale * 1000;
 
     // Update the scale
     timelineScale = newScale;
 
-    // Position of the anchored time in pixels after scaling
-    double newPixels = (_anchoredTimeMs * 0.001 * newScale);
-    // New scroll offset to keep the anchored time at the same viewport position
-    double newScrollOffset = newPixels - viewportOffset;
+    // Calculate where the same time should be after scaling
+    double newPixelsAtFocalPoint = timeAtFocalPoint / 1000 * newScale;
 
-    _jumpTimeline(newScrollOffset.clamp(
-        0.0,
-        scrollController.position.maxScrollExtent +
-            2000)); // allow some overscroll during gesture
+    // Adjust scroll to keep the focal point stationary
+    double newScrollOffset = newPixelsAtFocalPoint - focalOffsetFromCenter;
+
+    double maxScroll = scrollController.position.maxScrollExtent + 2000;
+    _jumpTimeline(newScrollOffset.clamp(0.0, maxScroll));
 
     update();
   }
 
-  void onScaleEnd() {
+  void onScaleEnd(ScaleEndDetails details) {
     isTimelineScrollLocked = false;
     _isUserScrolling = false;
     _anchoredTimeMs = 0;
+    _lastScale = 1.0;
+    _focalPointX = 0.0;
     update();
   }
 
