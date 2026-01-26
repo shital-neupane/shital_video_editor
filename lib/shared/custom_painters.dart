@@ -29,16 +29,29 @@ class TrimPainter extends CustomPainter {
   final int msTrimEnd;
   final bool isTrimmingMode;
   final double timelineScale;
+  final bool fullVideoMode;
 
   TrimPainter(this.msTrimStart, this.msTrimEnd,
-      {this.isTrimmingMode = false, this.timelineScale = 50.0});
+      {this.isTrimmingMode = false,
+      this.timelineScale = 50.0,
+      this.fullVideoMode = false});
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Handles are now drawn at relative positions:
-    // Start handle at 0, End handle at size.width (the trimmed duration)
-    double startX = 0;
-    double endX = size.width;
+    // In fullVideoMode: handles at absolute positions based on trim values
+    // In normal mode: handles at 0 and size.width (relative to trimmed duration)
+    double startX;
+    double endX;
+
+    if (fullVideoMode) {
+      // Absolute positions based on trim values
+      startX = (msTrimStart / 1000.0) * timelineScale;
+      endX = (msTrimEnd / 1000.0) * timelineScale;
+    } else {
+      // Relative positions at edges
+      startX = 0;
+      endX = size.width;
+    }
 
     // Instagram style frame color (Purple/Violet)
     const Color frameColor = Color(0xFF9C27B0); // Purple
@@ -71,14 +84,14 @@ class TrimPainter extends CustomPainter {
         framePaint,
       );
 
-      // Draw Top line
+      // Draw Top line (connecting the two handles)
       canvas.drawRect(
         Rect.fromLTWH(startX + handleWidth, 0, endX - startX - handleWidth * 2,
             lineWidth),
         framePaint,
       );
 
-      // Draw Bottom line
+      // Draw Bottom line (connecting the two handles)
       canvas.drawRect(
         Rect.fromLTWH(startX + handleWidth, size.height - lineWidth,
             endX - startX - handleWidth * 2, lineWidth),
@@ -116,7 +129,8 @@ class TrimPainter extends CustomPainter {
       return msTrimStart != oldDelegate.msTrimStart ||
           msTrimEnd != oldDelegate.msTrimEnd ||
           isTrimmingMode != oldDelegate.isTrimmingMode ||
-          timelineScale != oldDelegate.timelineScale;
+          timelineScale != oldDelegate.timelineScale ||
+          fullVideoMode != oldDelegate.fullVideoMode;
     }
     return true;
   }

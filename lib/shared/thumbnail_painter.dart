@@ -12,6 +12,12 @@ class ThumbnailPainter extends CustomPainter {
   final int msTrimEnd;
   final double timelineScale;
 
+  /// The left clip boundary (offset from start). Thumbnails before this point are hidden.
+  final double leftClipOffset;
+
+  /// The right clip boundary (offset from end). Thumbnails after this point are hidden.
+  final double rightClipOffset;
+
   ThumbnailPainter({
     required this.spriteSheet,
     required this.videoDuration,
@@ -22,14 +28,26 @@ class ThumbnailPainter extends CustomPainter {
     this.msTrimStart = 0,
     required this.msTrimEnd,
     this.timelineScale = 50.0,
+    this.leftClipOffset = 0.0,
+    this.rightClipOffset = 0.0,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     if (spriteSheet == null || thumbnailCount == 0) return;
 
-    // Clip to the visible bounds
-    canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    // Calculate visible clip bounds based on trim handle positions
+    // leftClipOffset is the position of the left handle (0 = at start, positive = moved right)
+    // rightClipOffset is the offset from end (0 = at end, negative = moved left)
+    double clipLeft = leftClipOffset.clamp(0.0, size.width);
+    double clipRight =
+        (size.width + rightClipOffset).clamp(clipLeft, size.width);
+
+    // Clip to only show thumbnails between the trim handles
+    // This creates the seamless masking effect during handle dragging
+    canvas.save();
+    canvas.clipRect(
+        Rect.fromLTWH(clipLeft, 0, clipRight - clipLeft, size.height));
 
     // Calculate thumbnail dimensions in the sprite sheet
     final double thumbnailWidth = spriteSheet!.width / columns;
@@ -101,6 +119,9 @@ class ThumbnailPainter extends CustomPainter {
         Paint()..filterQuality = FilterQuality.medium,
       );
     }
+
+    // Restore canvas after clipping
+    canvas.restore();
   }
 
   @override
@@ -110,6 +131,8 @@ class ThumbnailPainter extends CustomPainter {
         thumbnailCount != oldDelegate.thumbnailCount ||
         msTrimStart != oldDelegate.msTrimStart ||
         msTrimEnd != oldDelegate.msTrimEnd ||
-        timelineScale != oldDelegate.timelineScale;
+        timelineScale != oldDelegate.timelineScale ||
+        leftClipOffset != oldDelegate.leftClipOffset ||
+        rightClipOffset != oldDelegate.rightClipOffset;
   }
 }
