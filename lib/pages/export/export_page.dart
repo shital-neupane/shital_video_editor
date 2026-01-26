@@ -106,9 +106,9 @@ class ExportPage extends StatelessWidget {
             CircularPercentIndicator(
               radius: 60.0,
               animateFromLastPercent: true,
-              progressColor: Theme.of(context).colorScheme.secondary,
+              progressColor: Theme.of(context).colorScheme.primary,
               backgroundColor:
-                  Theme.of(context).primaryColorLight.withOpacity(0.5),
+                  Theme.of(context).primaryColorLight.withOpacity(0.2),
               circularStrokeCap: CircularStrokeCap.round,
               percent: _exportController.isCompressing.value
                   ? _exportController.compressionProgress.value

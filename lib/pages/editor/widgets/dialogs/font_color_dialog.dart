@@ -4,7 +4,8 @@ import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:get/get.dart';
 
 import '../../../../controllers/editor_controller.dart';
-import 'package:shital_video_editor/shared/translations/translation_keys.dart' as translations;
+import 'package:shital_video_editor/shared/translations/translation_keys.dart'
+    as translations;
 
 class FontColorDialog extends StatelessWidget {
   final ColorPickerContext context;
@@ -17,7 +18,8 @@ class FontColorDialog extends StatelessWidget {
       builder: (_) {
         return Dialog(
           alignment: Alignment.center,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.0)),
           child: Padding(
             padding: EdgeInsets.all(24.0),
             child: Column(
@@ -33,9 +35,10 @@ class FontColorDialog extends StatelessWidget {
                               : '0xFFFFFFFF',
                     ),
                   ),
-                  onColorChanged: (Color color) => this.context == ColorPickerContext.TEXT
-                      ? _.updateFontColor(color)
-                      : _.updateBackgroundColor(color),
+                  onColorChanged: (Color color) =>
+                      this.context == ColorPickerContext.TEXT
+                          ? _.updateFontColor(color)
+                          : _.updateBackgroundColor(color),
                   heading: Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Text(
@@ -54,24 +57,85 @@ class FontColorDialog extends StatelessWidget {
                     ColorPickerType.primary: false
                   },
                 ),
+                SizedBox(height: 24.0),
                 this.context == ColorPickerContext.BACKGROUND
-                    ? Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        ElevatedButton.icon(
-                          onPressed: () => _.clearBackgroundColor(),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _.selectedTextBackgroundColor == ''
-                                ? Colors.grey.withOpacity(0.5)
-                                : Theme.of(context).colorScheme.error,
-                            elevation: 0.0,
-                            padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.0)),
+                    ? Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _.clearBackgroundColor(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    _.selectedTextBackgroundColor == ''
+                                        ? Colors.grey.withOpacity(0.5)
+                                        : Theme.of(context).colorScheme.error,
+                                elevation: 0.0,
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16.0)),
+                              ),
+                              icon: Icon(Icons.delete_outline,
+                                  color: Colors.white),
+                              label: Text(
+                                  translations.backgroundColorDialogClear.tr,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(
+                                          color: Colors.white, fontSize: 16)),
+                            ),
                           ),
-                          icon: Icon(Icons.delete_outline, color: Colors.white),
-                          label: Text(translations.backgroundColorDialogClear.tr,
-                              style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white)),
+                          SizedBox(width: 12.0),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                                padding: EdgeInsets.symmetric(vertical: 16.0),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16.0)),
+                              ),
+                              child: Text('Done',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium!
+                                      .copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onPrimary,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16)),
+                            ),
+                          ),
+                        ],
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.primary,
+                            foregroundColor:
+                                Theme.of(context).colorScheme.onPrimary,
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16.0)),
+                          ),
+                          child: Text('Done',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium!
+                                  .copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
+                                      fontWeight: FontWeight.bold)),
                         ),
-                      ])
-                    : SizedBox.shrink()
+                      ),
               ],
             ),
           ),

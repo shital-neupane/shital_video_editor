@@ -3,7 +3,8 @@ import 'package:shital_video_editor/controllers/editor_controller.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/custom_painters.dart';
 import 'package:get/get.dart';
-import 'package:shital_video_editor/shared/translations/translation_keys.dart' as translations;
+import 'package:shital_video_editor/shared/translations/translation_keys.dart'
+    as translations;
 
 class ExportBottomSheet extends StatelessWidget {
   const ExportBottomSheet({Key? key}) : super(key: key);
@@ -48,9 +49,12 @@ class ExportBottomSheet extends StatelessWidget {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(translations.exportSheetFPSTitle.tr, style: Theme.of(context).textTheme.titleMedium),
+                              Text(translations.exportSheetFPSTitle.tr,
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
                               Text(translations.exportSheetFPSSubtitle.tr,
-                                  style: Theme.of(context).textTheme.labelSmall),
+                                  style:
+                                      Theme.of(context).textTheme.labelSmall),
                             ],
                           ),
                           Slider(
@@ -69,7 +73,9 @@ class ExportBottomSheet extends StatelessWidget {
                     SizedBox(
                       width: 4.0,
                     ),
-                    Checkbox(value: _.fpsActive, onChanged: (bool? value) => _.fpsActive = value!)
+                    Checkbox(
+                        value: _.fpsActive,
+                        onChanged: (bool? value) => _.fpsActive = value!)
                   ],
                 ),
                 SizedBox(height: 8.0),
@@ -83,9 +89,11 @@ class ExportBottomSheet extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(translations.exportSheetBitrateTitle.tr,
-                                  style: Theme.of(context).textTheme.titleMedium),
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium),
                               Text(translations.exportSheetBitrateSubtitle.tr,
-                                  style: Theme.of(context).textTheme.labelSmall),
+                                  style:
+                                      Theme.of(context).textTheme.labelSmall),
                             ],
                           ),
                           Slider(
@@ -104,7 +112,9 @@ class ExportBottomSheet extends StatelessWidget {
                     SizedBox(
                       width: 4.0,
                     ),
-                    Checkbox(value: _.bitrateActive, onChanged: (bool? value) => _.bitrateActive = value!)
+                    Checkbox(
+                        value: _.bitrateActive,
+                        onChanged: (bool? value) => _.bitrateActive = value!)
                   ],
                 ),
                 // -----------------------------------------------
@@ -121,14 +131,20 @@ class ExportBottomSheet extends StatelessWidget {
                       icon: Icon(Icons.file_upload_outlined, size: 26.0),
                       label: Text(
                         translations.exportSheetButtonText.tr,
-                        style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium!
+                            .copyWith(color: Colors.white),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).primaryColorLight,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor:
+                            Theme.of(context).colorScheme.onPrimary,
                         padding: EdgeInsets.all(16),
                         shape: RoundedRectangleBorder(
-                          side: BorderSide(color: Theme.of(context).primaryColorLight, width: 2.0),
+                          side: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                              width: 2.0),
                           borderRadius: BorderRadius.circular(100.0),
                         ),
                       ),

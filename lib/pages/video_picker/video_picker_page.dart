@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shital_video_editor/models/project.dart';
-import 'package:shital_video_editor/models/media_transformations.dart';
+
 import 'package:shital_video_editor/routes/app_pages.dart';
 import 'package:shital_video_editor/services/thumbnail_service.dart';
 import 'package:get/get.dart';
-import 'package:image_picker/image_picker.dart';
+
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 
@@ -24,7 +24,7 @@ class VideoPickerPage extends StatefulWidget {
 }
 
 class _VideoPickerPageState extends State<VideoPickerPage> {
-  final ImagePicker _picker = ImagePicker();
+  // final ImagePicker _picker = ImagePicker();
   bool initVidChecked = false;
   bool saveChecked = false;
 

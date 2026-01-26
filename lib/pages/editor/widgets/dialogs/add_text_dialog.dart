@@ -62,7 +62,8 @@ class AddTextDialog extends StatelessWidget {
                       children: [
                         ColoredIconButton(
                           backgroundColor: Theme.of(context)
-                              .primaryColorLight
+                              .colorScheme
+                              .primary
                               .withOpacity(Get.isDarkMode ? 1 : 0.2),
                           icon: Icons.remove,
                           onPressed: () {
@@ -75,7 +76,7 @@ class AddTextDialog extends StatelessWidget {
                         Container(
                           decoration: BoxDecoration(
                             border: Border.all(
-                                color: Theme.of(context).primaryColorLight,
+                                color: Theme.of(context).colorScheme.primary,
                                 width: 2.0),
                             borderRadius: BorderRadius.circular(16.0),
                           ),
@@ -89,7 +90,8 @@ class AddTextDialog extends StatelessWidget {
                         SizedBox(width: 8.0),
                         ColoredIconButton(
                           backgroundColor: Theme.of(context)
-                              .primaryColorLight
+                              .colorScheme
+                              .primary
                               .withOpacity(Get.isDarkMode ? 1 : 0.2),
                           icon: Icons.add,
                           onPressed: () {
@@ -135,17 +137,17 @@ class AddTextDialog extends StatelessWidget {
                               : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor:
-                                Theme.of(context).primaryColorLight,
+                                Theme.of(context).colorScheme.primary,
                             disabledBackgroundColor:
                                 Theme.of(context).disabledColor,
                             disabledForegroundColor:
-                                Theme.of(context).primaryColor,
+                                Theme.of(context).colorScheme.onPrimary,
                             padding: EdgeInsets.all(16),
                             shape: RoundedRectangleBorder(
                               side: BorderSide(
                                   color: _.textToAdd == ''
                                       ? Theme.of(context).disabledColor
-                                      : Theme.of(context).primaryColorLight,
+                                      : Theme.of(context).colorScheme.primary,
                                   width: 2.0),
                               borderRadius: BorderRadius.circular(100.0),
                             ),
@@ -155,7 +157,9 @@ class AddTextDialog extends StatelessWidget {
                                   .textTheme
                                   .bodySmall!
                                   .copyWith(
-                                      color: Colors.white,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onPrimary,
                                       fontWeight: FontWeight.bold)),
                         ),
                       ],

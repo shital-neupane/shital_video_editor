@@ -90,8 +90,8 @@ class EditorPage extends GetView<EditorController> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 IconButton(
-                  icon: Icon(Icons.file_upload_outlined, size: 26.0),
-                  color: Theme.of(context).colorScheme.onBackground,
+                  icon: Icon(Icons.arrow_forward, size: 26.0),
+                  color: Color(0xFF0D47A1),
                   onPressed: () {
                     // Check video duration before showing export sheet
                     if (EditorController.to.afterExportVideoDuration >

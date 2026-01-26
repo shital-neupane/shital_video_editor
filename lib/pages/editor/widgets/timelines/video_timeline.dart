@@ -148,6 +148,8 @@ class _VideoTimelineState extends State<VideoTimeline> {
           onTap: () {
             if (controller.selectedOptions != SelectedOptions.TRIM) {
               controller.selectedOptions = SelectedOptions.TRIM;
+            } else {
+              controller.selectedOptions = SelectedOptions.BASE;
             }
           },
           child: timelineContent,
