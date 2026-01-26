@@ -75,9 +75,10 @@ class EditorController extends GetxController {
       project.transformations.trimEnd.inMilliseconds -
       project.transformations.trimStart.inMilliseconds;
 
-  String get videoPositionString => formatTime(_position!.inSeconds);
+  String get videoPositionString =>
+      formatTime((_position!.inMilliseconds - trimStart) ~/ 1000);
   String get videoDurationString => isVideoInitialized
-      ? formatTime(_videoController!.value.duration.inSeconds)
+      ? formatTime(afterExportVideoDuration ~/ 1000)
       : '00:00';
 
   bool get isHorizontal => videoWidth > videoHeight;
@@ -422,6 +423,15 @@ class EditorController extends GetxController {
         if (_position!.inMilliseconds < trimStart &&
             selectedOptions != SelectedOptions.TRIM) {
           jumpToStart();
+          return;
+        }
+
+        // If the position is past the trim end, pause and jump to start (if not in trim mode).
+        if (_position!.inMilliseconds >= trimEnd &&
+            selectedOptions != SelectedOptions.TRIM &&
+            isVideoPlaying) {
+          pauseVideo();
+          _videoController!.seekTo(Duration(milliseconds: trimEnd));
           return;
         }
 
