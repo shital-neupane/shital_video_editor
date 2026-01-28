@@ -748,8 +748,8 @@ class EditorController extends GetxController {
       text: textToAdd,
       msDuration: finalTextDuration,
       msStartTime: msStartTime,
-      x: x,
-      y: y,
+      x: x ?? 0.4,
+      y: y ?? 0.8,
     );
     project.transformations.texts.add(t);
 
@@ -816,9 +816,48 @@ class EditorController extends GetxController {
   }
 
   updateTextPosition(TextPosition position) {
-    project.transformations.texts
-        .firstWhere((element) => element.id == selectedTextId)
-        .position = position;
+    TextTransformation text = project.transformations.texts
+        .firstWhere((element) => element.id == selectedTextId);
+    text.position = position;
+
+    switch (position) {
+      case TextPosition.TL:
+        text.x = 0.1;
+        text.y = 0.1;
+        break;
+      case TextPosition.TC:
+        text.x = 0.5;
+        text.y = 0.1;
+        break;
+      case TextPosition.TR:
+        text.x = 0.9;
+        text.y = 0.1;
+        break;
+      case TextPosition.ML:
+        text.x = 0.1;
+        text.y = 0.5;
+        break;
+      case TextPosition.MC:
+        text.x = 0.5;
+        text.y = 0.5;
+        break;
+      case TextPosition.MR:
+        text.x = 0.9;
+        text.y = 0.5;
+        break;
+      case TextPosition.BL:
+        text.x = 0.1;
+        text.y = 0.8;
+        break;
+      case TextPosition.BC:
+        text.x = 0.5;
+        text.y = 0.8;
+        break;
+      case TextPosition.BR:
+        text.x = 0.9;
+        text.y = 0.8;
+        break;
+    }
     update();
   }
 
