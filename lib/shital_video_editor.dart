@@ -57,7 +57,6 @@ class _ShitalVEState extends State<ShitalVE> {
 
     return loaded
         ? GetMaterialApp(
-            title: 'LiteEdit',
             translations: Messages(),
             locale: const Locale('en'),
             fallbackLocale: const Locale('en', 'US'),

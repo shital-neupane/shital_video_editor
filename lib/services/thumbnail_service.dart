@@ -65,7 +65,8 @@ class ThumbnailService {
       final command = '-i "$videoPath" '
           '-vf "fps=$fps,scale=-1:50,tile=${columns}x$rows" '
           '-frames:v 1 '
-          '-q:v 5 '
+          '-q:v 20 '
+          '-threads 0 '
           '"$spriteSheetPath"';
 
       print(
