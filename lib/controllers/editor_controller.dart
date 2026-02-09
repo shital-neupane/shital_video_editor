@@ -15,6 +15,7 @@ import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
 import 'package:shital_video_editor/shared/helpers/files.dart';
 import 'package:shital_video_editor/shared/helpers/snackbar.dart';
 import 'package:shital_video_editor/shared/helpers/video.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:get/get.dart';
 import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
@@ -356,7 +357,7 @@ class EditorController extends GetxController {
 
   @override
   void onInit() async {
-    print('DEBUG: EditorController onInit started');
+    logger.debug('EditorController onInit started');
     super.onInit();
 
     // Initialize the video player controller if the project has a video.
@@ -366,18 +367,18 @@ class EditorController extends GetxController {
     if (hasAudio) {
       _initializeAudio();
     }
-    print('DEBUG: EditorController onInit completed');
+    logger.debug('EditorController onInit completed');
   }
 
   @override
   void onClose() {
-    print('DEBUG: EditorController onClose called');
+    logger.debug('EditorController onClose called');
     super.onClose();
     // Dispose of the video player controller when the editor is closed.
     _videoController?.dispose();
     _audioPlayer.dispose();
     _videoController = null;
-    print('DEBUG: EditorController onClose completed');
+    logger.debug('EditorController onClose completed');
   }
 
   Future<void> _initializeVideoController() async {
@@ -735,7 +736,7 @@ class EditorController extends GetxController {
   }
 
   addProjectText({double? x, double? y}) {
-    print('DEBUG: addProjectText called with text: $textToAdd at ($x, $y)');
+    logger.debug('addProjectText called with text: $textToAdd at ($x, $y)');
     // Avoid duration to be bigger than the video duration.
     int msStartTime = _position!.inMilliseconds;
     int finalTextDuration = textDuration * 1000;
@@ -759,7 +760,7 @@ class EditorController extends GetxController {
     // Reset the textToAdd and textDuration variables.
     textToAdd = '';
     textDuration = 5;
-    print('DEBUG: addProjectText finished, text added to list');
+    logger.debug('addProjectText finished, text added to list');
   }
 
   updateTextCoordinates(String id, double x, double y) {
@@ -794,7 +795,7 @@ class EditorController extends GetxController {
   }
 
   updateFontColor(Color color) {
-    print('Color: 0x${color.value.toRadixString(16)}');
+    logger.debug('Color: 0x${color.value.toRadixString(16)}');
     project.transformations.texts
         .firstWhere((element) => element.id == selectedTextId)
         .color = '0x${color.value.toRadixString(16)}';

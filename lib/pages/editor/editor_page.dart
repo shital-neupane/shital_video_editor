@@ -25,9 +25,31 @@ class EditorPage extends GetView<EditorController> {
   @override
   Widget build(BuildContext context) {
     print('DEBUG: EditorPage build called');
+
+    final project = Get.arguments;
+    if (project == null) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text('No video project provided'),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Get.back(),
+                child: Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     // Initialize controller using Get.put ensures it persists as long as the route is active.
     // Using simple Get.put instead of GetBuilder init preventing premature disposal.
-    Get.put(EditorController(project: Get.arguments));
+    Get.put(EditorController(project: project));
 
     return Scaffold(
       resizeToAvoidBottomInset:
@@ -89,6 +111,15 @@ class EditorPage extends GetView<EditorController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
+                IconButton(
+                  icon: Icon(Icons.bug_report, size: 26.0),
+                  color: Color(0xFF666666),
+                  onPressed: () {
+                    Get.toNamed('/logs_viewer');
+                  },
+                  splashRadius: 20.0,
+                  tooltip: 'View Debug Logs',
+                ),
                 IconButton(
                   icon: Icon(Icons.arrow_forward, size: 26.0),
                   color: Color(0xFF0D47A1),

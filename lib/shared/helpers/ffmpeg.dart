@@ -7,6 +7,7 @@ import 'package:shital_video_editor/models/media_transformations.dart';
 import 'package:shital_video_editor/models/text.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/video.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<String> registerFonts() async {
@@ -211,7 +212,7 @@ String getFilterComplexCropCommand(
 }
 
 String scaleCrop(double crop, double scalingFactor) {
-  print('Crop: $crop, scalingFactor: $scalingFactor');
+  logger.debug('Crop: $crop, scalingFactor: $scalingFactor');
   return (crop * scalingFactor).toInt().toString();
 }
 

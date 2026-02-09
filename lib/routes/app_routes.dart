@@ -6,4 +6,5 @@ abstract class Routes {
   static const VIDEO_PICKER = '/video_picker';
   static const EDITOR = '/editor';
   static const EXPORT = '/export';
+  static const LOGS_VIEWER = '/logs_viewer';
 }

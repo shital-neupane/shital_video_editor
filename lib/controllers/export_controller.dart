@@ -5,6 +5,7 @@ import 'package:ffmpeg_kit_flutter_new/session.dart';
 import 'package:ffmpeg_kit_flutter_new/statistics.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:get/get.dart';
 import 'package:shital_video_editor/shared/translations/translation_keys.dart'
@@ -68,22 +69,22 @@ class ExportController extends GetxController {
           isExporting.value = false;
         });
       } else if (ReturnCode.isCancel(returnCode)) {
-        print('VIDEO EXPORT CANCELLED ${session.getLogsAsString()}');
+        logger.warning('VIDEO EXPORT CANCELLED ${session.getLogsAsString()}');
       } else {
         // There was an error exporting the video
         logs = await session.getLogs();
         for (var element in logs) {
-          print('${element.getMessage()}\n');
+          logger.error('${element.getMessage()}\n');
         }
         isExporting.value = false;
         errorExporting.value = true;
       }
     }, (Log log) {
-      print('${log.getMessage()}\n');
+      logger.debug('${log.getMessage()}\n');
     }, (Statistics statistics) {
       if (statistics.getTime() > 0) {
         exportProgress.value = statistics.getTime() / videoDuration;
-        print('Progress: ${exportProgress.value * 100}%');
+        logger.debug('Progress: ${exportProgress.value * 100}%');
       }
     });
   }
@@ -103,11 +104,11 @@ class ExportController extends GetxController {
 
       // Debug: Check if input file exists
       final inputFile = File(outputPath);
-      print("DEBUG: search Input path: $outputPath");
-      print("DEBUG: search Input file exists: ${inputFile.existsSync()}");
+      logger.debug("Input path: $outputPath");
+      logger.debug("Input file exists: ${inputFile.existsSync()}");
       if (inputFile.existsSync()) {
-        print(
-            "DEBUG: search Input file size: ${(inputFile.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
+        logger.debug(
+            "Input file size: ${(inputFile.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
       }
 
       final compressedMediaInfo = await VideoCompress.compressVideo(
@@ -118,25 +119,25 @@ class ExportController extends GetxController {
       );
 
       // Debug: Log full result
-      print("DEBUG: search compressedMediaInfo: $compressedMediaInfo");
-      print(
-          "DEBUG: search compressedMediaInfo?.file: ${compressedMediaInfo?.file}");
-      print(
-          "DEBUG: search compressedMediaInfo?.path: ${compressedMediaInfo?.path}");
+      logger.debug("compressedMediaInfo: $compressedMediaInfo");
+      logger.debug(
+          "compressedMediaInfo?.file: ${compressedMediaInfo?.file}");
+      logger.debug(
+          "compressedMediaInfo?.path: ${compressedMediaInfo?.path}");
 
       if (compressedMediaInfo != null && compressedMediaInfo.file != null) {
         compressedFile = compressedMediaInfo.file;
-        print(
+        logger.info(
             "Video Compression Success: ${(compressedFile!.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
       } else {
-        print(
-            "DEBUG: search Compression failed! MediaInfo was null or file was null");
+        logger.warning(
+            "Compression failed! MediaInfo was null or file was null");
         // Fallback: use original file if compression fails
         compressedFile = inputFile;
-        print("DEBUG: seatch Fallback: Using original file instead");
+        logger.debug("Fallback: Using original file instead");
       }
     } catch (e) {
-      print("DEBUG: Error during compression: $e");
+      logger.error("Error during compression: $e");
     } finally {
       _compressionSubscription?.unsubscribe();
       isCompressing.value = false;

@@ -7,6 +7,7 @@ import 'package:shital_video_editor/controllers/export_controller.dart';
 import 'package:get/get.dart';
 import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
@@ -19,7 +20,16 @@ class ExportPage extends StatelessWidget {
     ),
   );
 
-  void _exitWithOutput(BuildContext context) {
+  Future<void> _clearProjectData() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('initialVideo');
+    await prefs.remove('editedVideo');
+  }
+
+  void _exitWithOutput(BuildContext context) async {
+    // Clear temporary project data before exiting
+    await _clearProjectData();
+
     Navigator.popUntil(context, (route) => route.isFirst);
     Navigator.of(context, rootNavigator: true).pop(
         _exportController.compressedFile ?? File(_exportController.outputPath));
@@ -110,9 +120,10 @@ class ExportPage extends StatelessWidget {
               backgroundColor:
                   Theme.of(context).primaryColorLight.withOpacity(0.2),
               circularStrokeCap: CircularStrokeCap.round,
-              percent: _exportController.isCompressing.value
-                  ? _exportController.compressionProgress.value
-                  : _exportController.exportProgress.value,
+              percent: (_exportController.isCompressing.value
+                      ? _exportController.compressionProgress.value
+                      : _exportController.exportProgress.value)
+                  .clamp(0.0, 1.0),
               center: Text(
                 _exportController.isCompressing.value
                     ? "${(_exportController.compressionProgress.value * 100).toStringAsFixed(0)}%"

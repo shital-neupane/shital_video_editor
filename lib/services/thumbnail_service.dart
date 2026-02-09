@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 
 class ThumbnailService {
   /// Calculate optimal FPS based on video duration
@@ -69,7 +70,7 @@ class ThumbnailService {
           '-threads 0 '
           '"$spriteSheetPath"';
 
-      print(
+      logger.info(
           'Generating sprite sheet with $thumbnailCount thumbnails (${columns}x$rows grid)...');
 
       // Execute FFmpeg command
@@ -77,23 +78,23 @@ class ThumbnailService {
       final returnCode = await session.getReturnCode();
 
       if (ReturnCode.isSuccess(returnCode)) {
-        print('Sprite sheet generated successfully: $spriteSheetPath');
+        logger.info('Sprite sheet generated successfully: $spriteSheetPath');
         final file = File(spriteSheetPath);
         if (await file.exists()) {
           final fileSize = await file.length();
-          print(
+          logger.info(
               'Sprite sheet size: ${(fileSize / 1024).toStringAsFixed(2)} KB');
           return spriteSheetPath;
         }
       } else {
-        print('Failed to generate sprite sheet');
+        logger.error('Failed to generate sprite sheet');
         final logs = await session.getAllLogsAsString();
-        print('FFmpeg logs: $logs');
+        logger.error('FFmpeg logs: $logs');
       }
 
       return null;
     } catch (e) {
-      print('Error generating sprite sheet: $e');
+      logger.error('Error generating sprite sheet: $e');
       return null;
     }
   }

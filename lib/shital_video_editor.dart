@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 import 'package:shital_video_editor/routes/app_pages.dart';
 import 'package:shital_video_editor/shared/core/themes.dart';
 import 'package:shital_video_editor/shared/translations/messages.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await logger.init();
+  logger.info('Application starting...');
 
   runApp(ShitalVE());
 }
@@ -26,27 +30,40 @@ class ShitalVE extends StatefulWidget {
 
 class _ShitalVEState extends State<ShitalVE> {
   bool loaded = false;
+  bool _shouldClose = false;
 
   @override
   void initState() {
-    if (widget.initialVideo != null) {
+    super.initState();
+
+    if (widget.initialVideo != null && widget.initialVideo!.isNotEmpty) {
       debugPrint(
           "SEARCH INITIAL VIDEO was not null in main on init runni save");
-      _saveInitialVideoToPrefs();
+      _initialize();
     } else {
-      Navigator.pop(context);
+      _shouldClose = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
+      });
     }
-
-    super.initState();
   }
 
-  Future<void> _saveInitialVideoToPrefs() async {
+  Future<void> _initialize() async {
+    await logger.init();
+    logger.info(
+        'ShitalVE widget initializing with video: ${widget.initialVideo}');
+
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('initialVideo', widget.initialVideo!);
-    setState(() {
-      loaded = true;
-    });
     print("SEARCH ADDED INITIAL VIDEO TO PREF");
+
+    if (mounted) {
+      setState(() {
+        loaded = true;
+      });
+    }
   }
 
   @override
@@ -54,6 +71,10 @@ class _ShitalVEState extends State<ShitalVE> {
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
     ]);
+
+    if (_shouldClose) {
+      return const SizedBox.shrink();
+    }
 
     return loaded
         ? GetMaterialApp(
@@ -67,6 +88,6 @@ class _ShitalVEState extends State<ShitalVE> {
             darkTheme: appThemeDataDark,
             debugShowCheckedModeBanner: false,
           )
-        : CircularProgressIndicator();
+        : const Center(child: CircularProgressIndicator());
   }
 }

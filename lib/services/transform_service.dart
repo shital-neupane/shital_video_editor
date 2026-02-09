@@ -7,6 +7,7 @@ import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new/session.dart';
 import 'package:shital_video_editor/shared/helpers/files.dart';
 import 'package:shital_video_editor/shared/helpers/video.dart';
+import 'package:shital_video_editor/shared/logger_service.dart';
 
 class TransformService {
   // Executes FFMPEG command to turn image to a video with a photo duration
@@ -15,7 +16,7 @@ class TransformService {
     String filename = inputPath.split('/').last.split('.').first;
     String outputPath = await generateOutputPath(filename);
 
-    print('Image to video: $inputPath -> $outputPath');
+    logger.info('Image to video: $inputPath -> $outputPath');
     // FFMPEG command
     String command =
         '-loop 1 -i "$inputPath" -f lavfi -i anullsrc=channel_layout=5.1:sample_rate=48000 -t $photoDuration -filter:v scale=720:-2 -y -c:v mpeg4 -shortest "$outputPath"';
@@ -23,13 +24,13 @@ class TransformService {
     ReturnCode? returnCode = await session.getReturnCode();
 
     if (ReturnCode.isSuccess(returnCode)) {
-      print('Image to video success');
+      logger.info('Image to video success');
       return outputPath;
     } else {
-      print('Image to video error: ${session.getAllLogs()}');
+      logger.error('Image to video error: ${session.getAllLogs()}');
       List<Log> logs = await session.getAllLogs();
       for (Log log in logs) {
-        print('Log: ${log.getMessage()}');
+        logger.error('Log: ${log.getMessage()}');
       }
       throw Exception('Image to video error');
     }
@@ -41,7 +42,7 @@ class TransformService {
     String filename = mediaName.split('.').first;
     String outputPath = await generateThumbnailPath('$filename-thumbnail');
 
-    print('Generate thumbnail: $mediaUrl -> $outputPath');
+    logger.info('Generate thumbnail: $mediaUrl -> $outputPath');
 
     Uint8List? thumbnail = await getLocalVideoThumbnail(mediaUrl);
     if (thumbnail != null) {

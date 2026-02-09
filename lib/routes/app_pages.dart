@@ -2,6 +2,7 @@
 
 import 'package:shital_video_editor/pages/editor/editor_page.dart';
 import 'package:shital_video_editor/pages/export/export_page.dart';
+import 'package:shital_video_editor/pages/logs_viewer/logs_viewer_page.dart';
 import 'package:shital_video_editor/pages/video_picker/video_picker_page.dart';
 import 'package:get/route_manager.dart';
 
@@ -22,6 +23,10 @@ class AppPages {
     GetPage(
       name: Routes.EXPORT,
       page: () => ExportPage(),
+    ),
+    GetPage(
+      name: Routes.LOGS_VIEWER,
+      page: () => const LogsViewerPage(),
     )
   ];
 }
