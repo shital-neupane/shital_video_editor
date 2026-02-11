@@ -11,23 +11,37 @@ import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
 
 Future<String> registerFonts() async {
-  const filename = 'CenturyGothic-Regular.ttf';
-  var bytes = await rootBundle.load("fonts/$filename");
+  logger.info('FFMPEG: Starting registerFonts()');
+  try {
+    const filename = 'CenturyGothic-Regular.ttf';
+    logger.debug('FFMPEG: Loading font asset: fonts/$filename');
+    var bytes = await rootBundle.load("fonts/$filename");
 
-  String dir = (await getApplicationDocumentsDirectory()).path;
-  final path = '$dir/$filename';
+    String dir = (await getApplicationDocumentsDirectory()).path;
+    final path = '$dir/$filename';
+    logger.debug('FFMPEG: Application documents directory: $dir');
 
-  final buffer = bytes.buffer;
-  await File(path).writeAsBytes(
-      buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+    final buffer = bytes.buffer;
+    await File(path).writeAsBytes(
+        buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+    logger.info('FFMPEG: Font written to local file: $path');
 
-  File file = File('$dir/$filename');
+    File file = File('$dir/$filename');
+    if (!file.existsSync()) {
+      logger.error('FFMPEG: Font file does not exist after writing!');
+    }
 
-  print('Loaded file ${file.path}');
-  FFmpegKitConfig.setFontDirectoryList(
-      ["/system/fonts", "/System/Library/Fonts", file.path]);
+    logger.debug('FFMPEG: Setting FFmpegKit font directory list');
+    FFmpegKitConfig.setFontDirectoryList(
+        ["/system/fonts", "/System/Library/Fonts", file.path]);
 
-  return file.path;
+    logger.info('FFMPEG: registerFonts() completed successfully');
+    return file.path;
+  } catch (e, stackTrace) {
+    logger.error('FFMPEG: ERROR in registerFonts: $e');
+    logger.error('FFMPEG: StackTrace: $stackTrace');
+    rethrow;
+  }
 }
 
 Future<String> generateFFMPEGCommand(
@@ -39,56 +53,72 @@ Future<String> generateFFMPEGCommand(
     double videoHeight,
     double scalingFactor,
     ExportOptions exportOptions) async {
-  final hasAudio = transformations.audioUrl.isNotEmpty;
-  final hasTexts = transformations.texts.isNotEmpty;
-  final hasCrop = transformations.cropWidth < videoWidth ||
-      transformations.cropHeight < videoHeight;
+  logger.info('FFMPEG: Starting generateFFMPEGCommand');
+  try {
+    final hasAudio = transformations.audioUrl.isNotEmpty;
+    final hasTexts = transformations.texts.isNotEmpty;
+    final hasCrop = transformations.cropWidth < videoWidth ||
+        transformations.cropHeight < videoHeight;
 
-  // Base command
-  String command =
-      '-i "$inputPath" ${hasAudio ? '-i "${transformations.audioUrl}" ' : ''}';
+    logger.debug(
+        'FFMPEG: Transformations - Audio: $hasAudio, Texts: $hasTexts, Crop: $hasCrop');
 
-  // Add trim command
-  command += getFilterComplexTrimCommand(
-    transformations.trimStart.inMilliseconds,
-    transformations.trimEnd.inMilliseconds,
-    msVideoDuration,
-    transformations.masterVolume,
-    exportOptions.videoFps,
-  );
+    // Base command
+    String command =
+        '-i "$inputPath" ${hasAudio ? '-i "${transformations.audioUrl}" ' : ''}';
+    logger.debug('EXPORT: Initial command with inputs: $command');
 
-  // Add volume command
-  command += getFilterComplexAudioCommand(
-    hasAudio,
-    transformations.audioVolume,
-    transformations.audioStart.inMilliseconds,
-  );
+    // Add trim command
+    logger.debug('FFMPEG: Adding trim command');
+    command += getFilterComplexTrimCommand(
+      transformations.trimStart.inMilliseconds,
+      transformations.trimEnd.inMilliseconds,
+      msVideoDuration,
+      transformations.masterVolume,
+      exportOptions.videoFps,
+    );
 
-  // Add text command. Get font path
-  final fontPath = await registerFonts();
-  command += getFilterComplexTextCommand(
-    hasTexts,
-    transformations.texts,
-    transformations.trimStart.inMilliseconds,
-    fontPath,
-    scalingFactor,
-  );
+    // Add volume command
+    logger.debug('FFMPEG: Adding audio volume command');
+    command += getFilterComplexAudioCommand(
+      hasAudio,
+      transformations.audioVolume,
+      transformations.audioStart.inMilliseconds,
+    );
 
-  // Add crop command
-  command += getFilterComplexCropCommand(
-      transformations.cropX,
-      transformations.cropY,
-      transformations.cropWidth,
-      transformations.cropHeight,
+    // Add text command. Get font path
+    logger.info('FFMPEG: Registering fonts for text overlays...');
+    final fontPath = await registerFonts();
+    command += getFilterComplexTextCommand(
+      hasTexts,
+      transformations.texts,
+      transformations.trimStart.inMilliseconds,
+      fontPath,
       scalingFactor,
-      hasCrop,
-      hasTexts);
+    );
 
-  // Add end command
-  command +=
-      ' -map ${hasCrop ? '[video_out_cropped]' : hasTexts ? '[video_out]' : '[v0]'} -map ${hasAudio ? '[audio_out]' : '[a0]'} -c:v mpeg4 ${exportOptions.videoBitrate != '' ? '-b:v ${exportOptions.videoBitrate}' : ''} "$outputPath"';
+    // Add crop command
+    logger.debug('FFMPEG: Adding crop command');
+    command += getFilterComplexCropCommand(
+        transformations.cropX,
+        transformations.cropY,
+        transformations.cropWidth,
+        transformations.cropHeight,
+        scalingFactor,
+        hasCrop,
+        hasTexts);
 
-  return command;
+    // Add end command
+    command +=
+        ' -map ${hasCrop ? '[video_out_cropped]' : hasTexts ? '[video_out]' : '[v0]'} -map ${hasAudio ? '[audio_out]' : '[a0]'} -c:v mpeg4 ${exportOptions.videoBitrate != '' ? '-b:v ${exportOptions.videoBitrate}' : ''} "$outputPath"';
+
+    logger.info('FFMPEG: generateFFMPEGCommand completed');
+    return command;
+  } catch (e, stackTrace) {
+    logger.error('FFMPEG: ERROR in generateFFMPEGCommand: $e');
+    logger.error('FFMPEG: StackTrace: $stackTrace');
+    rethrow;
+  }
 }
 
 String msToFFMPEGTime(int milliseconds) {

@@ -1,5 +1,6 @@
 import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter_new/log.dart';
+import 'package:ffmpeg_kit_flutter_new/level.dart';
 import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new/session.dart';
 import 'package:ffmpeg_kit_flutter_new/statistics.dart';
@@ -39,54 +40,101 @@ class ExportController extends GetxController {
 
   @override
   void onInit() async {
+    logger.info('EXPORT_CTRL: onInit() started');
     super.onInit();
 
-    // Register fonts
-    await registerFonts();
+    try {
+      // Register fonts
+      logger.info('EXPORT_CTRL: Registering fonts...');
+      await registerFonts();
+      logger.info('EXPORT_CTRL: Fonts registered successfully');
 
-    // Start the export process
-    _exportVideo();
+      // Start the export process
+      logger.info('EXPORT_CTRL: Starting _exportVideo()');
+      _exportVideo();
+    } catch (e, stackTrace) {
+      logger.error('EXPORT_CTRL: CRITICAL ERROR in onInit: $e');
+      logger.error('EXPORT_CTRL: StackTrace: $stackTrace');
+      errorExporting.value = true;
+      isExporting.value = false;
+    }
   }
 
   _exportVideo() async {
-    // Execute the export command. Save the video to the gallery if the export is successful.
-    await FFmpegKit.executeAsync(command, (Session session) async {
-      final returnCode = await session.getReturnCode();
+    logger.info('EXPORT_CTRL: _exportVideo() execution started');
+    logger.debug('EXPORT_CTRL: Command to execute: ffmpeg $command');
 
-      if (ReturnCode.isSuccess(returnCode)) {
-        // Save to gallery first
-        SaverGallery.saveFile(
-          filePath: outputPath,
-          fileName: 'video_export',
-          skipIfExists: false,
-        ).then((saved) async {
-          if (saved != null) {
-            isSavingToGallery.value = false;
-          }
-          // Start compression after saving to gallery and await completion
-          await _compressVideo();
-          // Only mark export as complete after compression finishes
+    try {
+      // Execute the export command. Save the video to the gallery if the export is successful.
+      await FFmpegKit.executeAsync(command, (Session session) async {
+        final returnCode = await session.getReturnCode();
+        logger.info(
+            'EXPORT_CTRL: FFmpeg execution finished with return code: $returnCode');
+
+        if (ReturnCode.isSuccess(returnCode)) {
+          logger.info('EXPORT_CTRL: Export successful, saving to gallery...');
+          SaverGallery.saveFile(
+            filePath: outputPath,
+            fileName: 'video_export',
+            skipIfExists: false,
+          ).then((saved) async {
+            if (saved != null) {
+              logger.info('EXPORT_CTRL: Saved to gallery successfully: $saved');
+              isSavingToGallery.value = false;
+            } else {
+              logger
+                  .warning('EXPORT_CTRL: SaverGallery.saveFile returned null');
+            }
+
+            // Start compression after saving to gallery and await completion
+            logger.info('EXPORT_CTRL: Starting compression...');
+            await _compressVideo();
+
+            // Only mark export as complete after compression finishes
+            logger.info('EXPORT_CTRL: Export and compression process complete');
+            isExporting.value = false;
+          }).catchError((error) {
+            logger.error('EXPORT_CTRL: Error saving to gallery: $error');
+            // Continue to compression even if gallery save fails?
+            // For now, let's keep it consistent with original logic but add logging
+            _compressVideo().then((_) => isExporting.value = false);
+          });
+        } else if (ReturnCode.isCancel(returnCode)) {
+          logger.warning(
+              'EXPORT_CTRL: VIDEO EXPORT CANCELLED ${session.getLogsAsString()}');
           isExporting.value = false;
-        });
-      } else if (ReturnCode.isCancel(returnCode)) {
-        logger.warning('VIDEO EXPORT CANCELLED ${session.getLogsAsString()}');
-      } else {
-        // There was an error exporting the video
-        logs = await session.getLogs();
-        for (var element in logs) {
-          logger.error('${element.getMessage()}\n');
+        } else {
+          // There was an error exporting the video
+          logger.error('EXPORT_CTRL: FFmpeg execution FAILED');
+          logs = await session.getLogs();
+          for (var element in logs) {
+            logger.error('EXPORT_CTRL: FFmpeg Log: ${element.getMessage()}');
+          }
+          isExporting.value = false;
+          errorExporting.value = true;
         }
-        isExporting.value = false;
-        errorExporting.value = true;
-      }
-    }, (Log log) {
-      logger.debug('${log.getMessage()}\n');
-    }, (Statistics statistics) {
-      if (statistics.getTime() > 0) {
-        exportProgress.value = statistics.getTime() / videoDuration;
-        logger.debug('Progress: ${exportProgress.value * 100}%');
-      }
-    });
+      }, (Log log) {
+        // Reduced verbosity for debug logs unless it's an error
+        if (log.getLevel() == Level.avLogFatal ||
+            log.getLevel() == Level.avLogError) {
+          logger.error('FFMPEG_LOG: ${log.getMessage()}');
+        } else if (log.getLevel() == Level.avLogWarning) {
+          logger.warning('FFMPEG_LOG: ${log.getMessage()}');
+        }
+        // logger.debug('${log.getMessage()}\n');
+      }, (Statistics statistics) {
+        if (statistics.getTime() > 0) {
+          exportProgress.value =
+              (statistics.getTime() / videoDuration).clamp(0.0, 1.0);
+          // logger.debug('Progress: ${exportProgress.value * 100}%');
+        }
+      });
+    } catch (e, stackTrace) {
+      logger.error('EXPORT_CTRL: CRITICAL ERROR during FFmpeg execution: $e');
+      logger.error('EXPORT_CTRL: StackTrace: $stackTrace');
+      errorExporting.value = true;
+      isExporting.value = false;
+    }
   }
 
   Future<void> _compressVideo() async {
@@ -120,18 +168,16 @@ class ExportController extends GetxController {
 
       // Debug: Log full result
       logger.debug("compressedMediaInfo: $compressedMediaInfo");
-      logger.debug(
-          "compressedMediaInfo?.file: ${compressedMediaInfo?.file}");
-      logger.debug(
-          "compressedMediaInfo?.path: ${compressedMediaInfo?.path}");
+      logger.debug("compressedMediaInfo?.file: ${compressedMediaInfo?.file}");
+      logger.debug("compressedMediaInfo?.path: ${compressedMediaInfo?.path}");
 
       if (compressedMediaInfo != null && compressedMediaInfo.file != null) {
         compressedFile = compressedMediaInfo.file;
         logger.info(
             "Video Compression Success: ${(compressedFile!.lengthSync() / (1024 * 1024)).toStringAsFixed(2)} MB");
       } else {
-        logger.warning(
-            "Compression failed! MediaInfo was null or file was null");
+        logger
+            .warning("Compression failed! MediaInfo was null or file was null");
         // Fallback: use original file if compression fails
         compressedFile = inputFile;
         logger.debug("Fallback: Using original file instead");

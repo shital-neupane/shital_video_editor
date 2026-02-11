@@ -1337,54 +1337,82 @@ class EditorController extends GetxController {
   }
 
   exportVideo() async {
+    logger.info('EXPORT: Starting exportVideo process');
     if (isVideoPlaying) {
+      logger.debug('EXPORT: Video is playing, pausing it');
       pauseVideo();
     }
 
-    // Generate the FFMPEG command and navigate to the export page.
-    // Use underscores instead of colons - colons are illegal in Android file paths
-    String dateTime = DateFormat('yyyyMMdd_HH_mm_ss').format(DateTime.now());
-    String outputPath = await generateOutputPath('${project.name}_$dateTime');
+    try {
+      // Generate the FFMPEG command and navigate to the export page.
+      // Use underscores instead of colons - colons are illegal in Android file paths
+      String dateTime = DateFormat('yyyyMMdd_HH_mm_ss').format(DateTime.now());
+      logger.debug('EXPORT: Current timestamp for filename: $dateTime');
 
-    // Get the font scaling factor. Video height / in app height if vertical. Video width / in app width if horizontal.
-    double finalScalingFactor =
-        num.parse(scalingFactor.toStringAsFixed(2)).toDouble();
-    print('Font scaling factor: $scalingFactor');
+      String outputName = '${project.name}_$dateTime';
+      logger.debug('EXPORT: Generating output path for name: $outputName');
+      String outputPath = await generateOutputPath(outputName);
+      logger.info('EXPORT: Output path generated: $outputPath');
 
-    // Get the export options
-    final ExportOptions exportOptions = ExportOptions(
-      videoBitrate: bitrateActive ? Constants.videoBitrates[_bitrate] : '',
-      videoFps: fpsActive ? Constants.videoFps[_fps] : '',
-    );
+      // Get the font scaling factor. Video height / in app height if vertical. Video width / in app width if horizontal.
+      double finalScalingFactor =
+          num.parse(scalingFactor.toStringAsFixed(2)).toDouble();
+      logger.debug('EXPORT: Scaled factor calculated: $finalScalingFactor');
 
-    String path = project.mediaUrl;
+      // Get the export options
+      final ExportOptions exportOptions = ExportOptions(
+        videoBitrate: bitrateActive ? Constants.videoBitrates[_bitrate] : '',
+        videoFps: fpsActive ? Constants.videoFps[_fps] : '',
+      );
+      logger.debug(
+          'EXPORT: Export options: FPS=${exportOptions.videoFps}, Bitrate=${exportOptions.videoBitrate}');
 
-    String command = await generateFFMPEGCommand(
-      path,
-      outputPath,
-      exportVideoDuration,
-      project.transformations,
-      videoWidth,
-      videoHeight,
-      finalScalingFactor,
-      exportOptions,
-    );
+      String path = project.mediaUrl;
+      logger.debug('EXPORT: Project media URL: $path');
 
-    void printWrapped(String text) => RegExp('.{1,800}')
-        .allMatches(text)
-        .map((m) => m.group(0))
-        .forEach(print);
-    // Log the command to be executed and close the bottom sheet
-    printWrapped('Will execute : ffmpeg $command');
-    Get.back();
+      logger.info('EXPORT: Generating FFMPEG command...');
+      String command = await generateFFMPEGCommand(
+        path,
+        outputPath,
+        exportVideoDuration,
+        project.transformations,
+        videoWidth,
+        videoHeight,
+        finalScalingFactor,
+        exportOptions,
+      );
 
-    Get.toNamed(
-      Routes.EXPORT,
-      arguments: {
-        'command': command,
-        'outputPath': outputPath,
-        'videoDuration': afterExportVideoDuration
-      },
-    );
+      void printWrapped(String text) => RegExp('.{1,800}')
+          .allMatches(text)
+          .map((m) => m.group(0))
+          .forEach(print);
+
+      // Log the command to be executed and close the bottom sheet
+      logger.info('EXPORT: FFMPEG command generated successfully');
+      printWrapped('Will execute : ffmpeg $command');
+
+      logger.debug('EXPORT: Closing export bottom sheet');
+      Get.back();
+
+      logger.info('EXPORT: Navigating to EXPORT page');
+      Get.toNamed(
+        Routes.EXPORT,
+        arguments: {
+          'command': command,
+          'outputPath': outputPath,
+          'videoDuration': afterExportVideoDuration
+        },
+      );
+      logger.info('EXPORT: Navigation triggered');
+    } catch (e, stackTrace) {
+      logger.error('EXPORT: CRASH in exportVideo: $e');
+      logger.error('EXPORT: StackTrace: $stackTrace');
+      showSnackbar(
+        Theme.of(Get.context!).colorScheme.error,
+        "Export Failed",
+        "An error occurred while preparing the export: $e",
+        Icons.error_outline,
+      );
+    }
   }
 }
