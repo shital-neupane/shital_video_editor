@@ -113,7 +113,7 @@ class ExportController extends GetxController {
 
       final compressedMediaInfo = await VideoCompress.compressVideo(
         outputPath,
-        quality: VideoQuality.MediumQuality, // Try lower quality first
+        quality: VideoQuality.Res1280x720Quality,
         deleteOrigin: false,
         includeAudio: true,
       );
