@@ -9,16 +9,33 @@ import 'package:shital_video_editor/shared/translations/translation_keys.dart'
     as translations;
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 class ExportPage extends StatelessWidget {
-  final ExportController _exportController = Get.put(
-    ExportController(
-      command: Get.arguments['command'],
-      outputPath: Get.arguments['outputPath'],
-      videoDuration: Get.arguments['videoDuration'],
-    ),
-  );
+  ExportController get _exportController {
+    try {
+      return Get.find<ExportController>();
+    } catch (e) {
+      final args = Get.arguments;
+      if (args == null) {
+        throw Exception('ExportPage: Get.arguments is null');
+      }
+      if (args['command'] == null ||
+          args['outputPath'] == null ||
+          args['videoDuration'] == null) {
+        throw Exception(
+            'ExportPage: Missing required arguments. Got: ${args.keys.toList()}');
+      }
+      return Get.put(
+        ExportController(
+          command: args['command'],
+          outputPath: args['outputPath'],
+          videoDuration: args['videoDuration'],
+        ),
+      );
+    }
+  }
 
   Future<void> _clearProjectData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,18 +54,52 @@ class ExportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Obx(
-      () => Scaffold(
-        // Hide the app bar when exporting the video.
-        appBar:
-            _exportController.isExporting.value ? null : _exportAppBar(context),
-        body: _exportController.isExporting.value
-            ? _loadingScreen(context)
-            : _exportController.errorExporting.value
-                ? _errorExportingVideoScreen(context)
-                : _exportedVideoScreen(context),
-      ),
-    );
+    try {
+      final controller = _exportController;
+      return Obx(
+        () => Scaffold(
+          // Hide the app bar when exporting the video.
+          appBar: controller.isExporting.value ? null : _exportAppBar(context),
+          body: controller.isExporting.value
+              ? _loadingScreen(context)
+              : controller.errorExporting.value
+                  ? _errorExportingVideoScreen(context)
+                  : _exportedVideoScreen(context),
+        ),
+      );
+    } catch (e) {
+      logger.error('ExportPage: CRASH in build: $e');
+      return Scaffold(
+        appBar: AppBar(title: Text('Export Error')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline, color: Colors.red, size: 64),
+                SizedBox(height: 16),
+                Text(
+                  'Failed to initialize export',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  e.toString(),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => Get.back(),
+                  child: Text('Go Back'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   _exportAppBar(BuildContext context) {

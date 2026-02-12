@@ -33,10 +33,16 @@ class ExportController extends GetxController {
   File? compressedFile;
   Subscription? _compressionSubscription;
 
-  ExportController(
-      {required this.command,
-      required this.outputPath,
-      required this.videoDuration});
+  ExportController({
+    required this.command,
+    required this.outputPath,
+    required this.videoDuration,
+  }) {
+    logger.info('EXPORT_CTRL: Constructor called');
+    logger.debug('EXPORT_CTRL: Received command: $command');
+    logger.debug('EXPORT_CTRL: Received outputPath: $outputPath');
+    logger.debug('EXPORT_CTRL: Received videoDuration: $videoDuration');
+  }
 
   @override
   void onInit() async {
