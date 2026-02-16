@@ -1392,18 +1392,22 @@ class EditorController extends GetxController {
       printWrapped('Will execute : ffmpeg $command');
 
       logger.debug('EXPORT: Closing export bottom sheet');
-      Get.back();
+      Navigator.pop(Get.context!);
 
-      logger.info('EXPORT: Navigating to EXPORT page');
-      Get.toNamed(
-        Routes.EXPORT,
-        arguments: {
-          'command': command,
-          'outputPath': outputPath,
-          'videoDuration': afterExportVideoDuration
-        },
-      );
-      logger.info('EXPORT: Navigation triggered');
+      logger.info('EXPORT: Navigating to EXPORT page in next tick');
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (Get.context != null) {
+          Get.toNamed(
+            Routes.EXPORT,
+            arguments: {
+              'command': command,
+              'outputPath': outputPath,
+              'videoDuration': afterExportVideoDuration
+            },
+          );
+        }
+      });
+      logger.info('EXPORT: Navigation scheduled');
     } catch (e, stackTrace) {
       logger.error('EXPORT: CRASH in exportVideo: $e');
       logger.error('EXPORT: StackTrace: $stackTrace');

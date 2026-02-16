@@ -13,29 +13,7 @@ import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
 class ExportPage extends StatelessWidget {
-  ExportController get _exportController {
-    try {
-      return Get.find<ExportController>();
-    } catch (e) {
-      final args = Get.arguments;
-      if (args == null) {
-        throw Exception('ExportPage: Get.arguments is null');
-      }
-      if (args['command'] == null ||
-          args['outputPath'] == null ||
-          args['videoDuration'] == null) {
-        throw Exception(
-            'ExportPage: Missing required arguments. Got: ${args.keys.toList()}');
-      }
-      return Get.put(
-        ExportController(
-          command: args['command'],
-          outputPath: args['outputPath'],
-          videoDuration: args['videoDuration'],
-        ),
-      );
-    }
-  }
+  ExportController get _exportController => Get.find<ExportController>();
 
   Future<void> _clearProjectData() async {
     final prefs = await SharedPreferences.getInstance();
@@ -70,29 +48,29 @@ class ExportPage extends StatelessWidget {
     } catch (e) {
       logger.error('ExportPage: CRASH in build: $e');
       return Scaffold(
-        appBar: AppBar(title: Text('Export Error')),
+        appBar: AppBar(title: const Text('Export Error')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.error_outline, color: Colors.red, size: 64),
-                SizedBox(height: 16),
+                const Icon(Icons.error_outline, color: Colors.red, size: 64),
+                const SizedBox(height: 16),
                 Text(
                   'Failed to initialize export',
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
                 Text(
                   e.toString(),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-                SizedBox(height: 24),
+                const SizedBox(height: 24),
                 ElevatedButton(
                   onPressed: () => Get.back(),
-                  child: Text('Go Back'),
+                  child: const Text('Go Back'),
                 ),
               ],
             ),
@@ -106,32 +84,13 @@ class ExportPage extends StatelessWidget {
     return AppBar(
       automaticallyImplyLeading: false, // Don't show the leading button
       titleSpacing: 0,
-      shape: RoundedRectangleBorder(),
-      title: Padding(
-        padding: const EdgeInsets.all(16.0),
+      shape: const RoundedRectangleBorder(),
+      title: const Padding(
+        padding: EdgeInsets.all(16.0),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             // Get back to editor page
-            // InkWell(
-            //   onTap: () => Get.back(),
-            //   highlightColor: Colors.transparent,
-            //   splashFactory: NoSplash.splashFactory,
-            //   child: Row(
-            //     children: [
-            //       Icon(Icons.keyboard_backspace, color: Theme.of(context).colorScheme.onBackground, size: 26.0),
-            //       SizedBox(width: 4.0),
-            //       Transform.rotate(
-            //         angle: -90 * math.pi / 180,
-            //         child: Icon(
-            //           Icons.cut,
-            //           color: Theme.of(context).colorScheme.onBackground,
-            //           size: 26.0,
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ),
           ],
         ),
       ),
@@ -140,8 +99,8 @@ class ExportPage extends StatelessWidget {
 
   _loadingScreen(BuildContext context) {
     return Obx(
-      () => WillPopScope(
-        onWillPop: () async => false,
+      () => PopScope(
+        canPop: false,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -152,7 +111,7 @@ class ExportPage extends StatelessWidget {
                     : translations.exportPageLoadingTitle.tr,
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12.0),
               child: Text(
@@ -163,7 +122,7 @@ class ExportPage extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             CircularPercentIndicator(
               radius: 60.0,
               animateFromLastPercent: true,
@@ -192,167 +151,38 @@ class ExportPage extends StatelessWidget {
   }
 
   _exportedVideoScreen(BuildContext context) {
-    _exitWithOutput(context);
-    return SizedBox();
-    // return Padding(
-    //   padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 40.0),
-    //   child: Column(
-    //     children: [
-    //       Expanded(
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           crossAxisAlignment: CrossAxisAlignment.stretch,
-    //           children: [
-    //             Text(translations.exportPageSuccessTitle.tr,
-    //                 style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-    //             Image.asset(
-    //               'assets/check.png',
-    //               height: MediaQuery.of(context).size.width / 2.5,
-    //               width: MediaQuery.of(context).size.width / 2.5,
-    //             ),
-    //             Text(
-    //               translations.exportPageSuccessMessage.tr, // Changed from share message to success message
-    //               style: Theme.of(context).textTheme.bodyMedium,
-    //               textAlign: TextAlign.center,
-    //             ),
-    //             SizedBox(height: 12.0),
-    //             Text(
-    //               translations.exportPageFilePath.tr, // Add text to indicate file path
-    //               style: Theme.of(context).textTheme.bodySmall,
-    //               textAlign: TextAlign.center,
-    //             ),
-    //             Container(
-    //               padding: EdgeInsets.all(12.0),
-    //               margin: EdgeInsets.symmetric(horizontal: 16.0),
-    //               decoration: BoxDecoration(
-    //                 color: Theme.of(context).primaryColorLight.withOpacity(0.1),
-    //                 border: Border.all(color: Theme.of(context).primaryColorLight, width: 1.0),
-    //                 borderRadius: BorderRadius.circular(8.0),
-    //               ),
-    //               child: Text(
-    //                 _exportController.outputPath,
-    //                 style: Theme.of(context).textTheme.bodySmall,
-    //                 textAlign: TextAlign.center,
-    //                 overflow: TextOverflow.ellipsis,
-    //               ),
-    //             ),
-    //           ],
-    //         ),
-    //       ),
-    //       ElevatedButton(
-    //         onPressed: () =>
-    //         _exitWithOutput(context),
-
-    //         style: ElevatedButton.styleFrom(
-    //           backgroundColor: Theme.of(context).primaryColorLight,
-    //           foregroundColor: Colors.white,
-    //           padding: EdgeInsets.all(16),
-    //           shape: RoundedRectangleBorder(
-    //             side: BorderSide(color: Theme.of(context).primaryColorLight, width: 2.0),
-    //             borderRadius: BorderRadius.circular(100.0),
-    //           ),
-    //         ),
-    //         child: Text(
-    //           translations.exportPageGoBack.tr, // Changed text
-    //           style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
-    //         ),
-    //       ),
-    //     ],
-    //   ),
-    // );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _exitWithOutput(context);
+    });
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.green, size: 60),
+            SizedBox(height: 16),
+            Text("Export Successful!"),
+          ],
+        ),
+      ),
+    );
   }
 
   _errorExportingVideoScreen(BuildContext context) {
-    _exitWithOutput(context);
-    return SizedBox();
-    // Padding(
-    //   padding: const EdgeInsets.fromLTRB(16.0, 0.0, 16.0, 40.0),
-    //   child: Column(
-    //     children: [
-    //       Expanded(
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           crossAxisAlignment: CrossAxisAlignment.stretch,
-    //           children: [
-    //             Text(translations.exportPageErrorTitle.tr,
-    //                 style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
-    //             SizedBox(height: 18.0),
-    //             Image.asset(
-    //               'assets/error.png',
-    //               height: MediaQuery.of(context).size.width / 2.5,
-    //               width: MediaQuery.of(context).size.width / 2.5,
-    //             ),
-    //             SizedBox(height: 18.0),
-    //             Text(
-    //               translations.exportPageErrorSubtitle.tr,
-    //               style: Theme.of(context).textTheme.bodyMedium,
-    //               textAlign: TextAlign.center,
-    //             ),
-    //             SizedBox(height: 18.0),
-    //             Expanded(
-    //               child: Container(
-    //                 padding: EdgeInsets.all(16.0),
-    //                 decoration: BoxDecoration(
-    //                   color: Theme.of(context).primaryColorLight.withOpacity(0.1),
-    //                   border: Border.all(color: Theme.of(context).primaryColorLight, width: 2.0),
-    //                   borderRadius: BorderRadius.circular(16.0),
-    //                 ),
-    //                 child: SingleChildScrollView(
-    //                   child: Column(
-    //                     children: [
-    //                       Text(
-    //                         translations.exportPageErrorLogsTitle.tr,
-    //                         style: Theme.of(context).textTheme.titleMedium,
-    //                       ),
-    //                       SizedBox(height: 8.0),
-    //                       for (var log in _exportController.logs)
-    //                         Text(
-    //                           log.getMessage(),
-    //                           style: Theme.of(context).textTheme.bodySmall,
-    //                         ),
-    //                       SizedBox(height: 18.0),
-    //                       Text(
-    //                         translations.exportPageErrorCommandTitle.tr,
-    //                         style: Theme.of(context).textTheme.titleMedium,
-    //                       ),
-    //                       SizedBox(height: 8.0),
-    //                       Text(
-    //                         _exportController.command,
-    //                         style: Theme.of(context).textTheme.bodySmall,
-    //                       ),
-    //                     ],
-    //                   ),
-    //                 ),
-    //               ),
-    //             ),
-    //             SizedBox(height: 18.0)
-    //           ],
-    //         ),
-    //       ),
-    //       ElevatedButton(
-    //          onPressed: () =>
-    //         _exitWithOutput(context),
-    //         // onPressed: () {
-    //         //   // Get.back();
-
-    //         //   Navigator.popUntil(context, (route)=>route.isFirst);
-    //         //   }, // Go back to editor instead of home
-    //         style: ElevatedButton.styleFrom(
-    //           backgroundColor: Theme.of(context).primaryColorLight,
-    //           foregroundColor: Colors.white,
-    //           padding: EdgeInsets.all(16),
-    //           shape: RoundedRectangleBorder(
-    //             side: BorderSide(color: Theme.of(context).primaryColorLight, width: 2.0),
-    //             borderRadius: BorderRadius.circular(100.0),
-    //           ),
-    //         ),
-    //         child: Text(
-    //           translations.exportPageGoBack.tr, // Changed text
-    //           style: Theme.of(context).textTheme.titleMedium!.copyWith(color: Colors.white),
-    //         ),
-    //       ),
-    //     ],
-    //   ),
-    // );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _exitWithOutput(context);
+    });
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Colors.red, size: 60),
+            SizedBox(height: 16),
+            Text("Export Failed"),
+          ],
+        ),
+      ),
+    );
   }
 }
