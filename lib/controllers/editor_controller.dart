@@ -1393,12 +1393,13 @@ class EditorController extends GetxController {
 
       logger.debug('EXPORT: Closing export bottom sheet');
 
-      
+
       // Navigator.pop(Get.context!);
 
-      logger.info('EXPORT: Navigating to EXPORT page in next tick');
+      logger.info('EXPORT: Navigating to EXPORT page in next tick new commit ');
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.context != null) {
+          logger.info('we are just before get.tonamed');
           Get.toNamed(
             Routes.EXPORT,
             arguments: {
