@@ -1392,7 +1392,9 @@ class EditorController extends GetxController {
       printWrapped('Will execute : ffmpeg $command');
 
       logger.debug('EXPORT: Closing export bottom sheet');
-      Navigator.pop(Get.context!);
+
+      
+      // Navigator.pop(Get.context!);
 
       logger.info('EXPORT: Navigating to EXPORT page in next tick');
       Future.delayed(const Duration(milliseconds: 100), () {
