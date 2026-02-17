@@ -32,8 +32,13 @@ Future<String> registerFonts() async {
     }
 
     logger.debug('FFMPEG: Setting FFmpegKit font directory list');
-    FFmpegKitConfig.setFontDirectoryList(
-        ["/system/fonts", "/System/Library/Fonts", file.path]);
+    // iOS doesn't support setFontDirectoryList, only set the font file path directly
+    if (Platform.isIOS) {
+      FFmpegKitConfig.setFontDirectoryList([file.parent.path]);
+    } else {
+      FFmpegKitConfig.setFontDirectoryList(
+          ["/system/fonts", "/System/Library/Fonts", file.path]);
+    }
 
     logger.info('FFMPEG: registerFonts() completed successfully');
     return file.path;
