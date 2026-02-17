@@ -1393,24 +1393,29 @@ class EditorController extends GetxController {
 
       logger.debug('EXPORT: Closing export bottom sheet');
 
+      // Close the export bottom sheet
+      // Get.back();
 
-      // Navigator.pop(Get.context!);
-
-      logger.info('EXPORT: Navigating to EXPORT page in next tick new commit ');
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (Get.context != null) {
-          logger.info('we are just before get.tonamed');
-          Get.toNamed(
-            Routes.EXPORT,
-            arguments: {
-              'command': command,
-              'outputPath': outputPath,
-              'videoDuration': afterExportVideoDuration
-            },
-          );
-        }
-      });
-      logger.info('EXPORT: Navigation scheduled');
+      logger.info('EXPORT: Navigating to EXPORT page +1 tick');
+      try {
+        Get.toNamed(
+          Routes.EXPORT,
+          arguments: {
+            'command': command,
+            'outputPath': outputPath,
+            'videoDuration': afterExportVideoDuration
+          },
+        );
+      } catch (e, stackTrace) {
+        logger.info(
+            'EXPORT: Navigation didnot gothrough to named $e $stackTrace ');
+        showSnackbar(
+          Theme.of(Get.context!).colorScheme.error,
+          "Export Failed",
+          "An error occurred while preparing the export: $e",
+          Icons.error_outline,
+        );
+      }
     } catch (e, stackTrace) {
       logger.error('EXPORT: CRASH in exportVideo: $e');
       logger.error('EXPORT: StackTrace: $stackTrace');
