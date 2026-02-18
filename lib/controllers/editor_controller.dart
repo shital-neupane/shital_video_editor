@@ -9,7 +9,6 @@ import 'package:flutter/rendering.dart';
 import 'package:shital_video_editor/models/export_options.dart';
 import 'package:shital_video_editor/models/project.dart';
 import 'package:shital_video_editor/models/text.dart';
-import 'package:shital_video_editor/routes/app_pages.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
 import 'package:shital_video_editor/shared/helpers/files.dart';
@@ -22,6 +21,8 @@ import 'package:shital_video_editor/shared/translations/translation_keys.dart'
 
 import 'package:intl/intl.dart';
 import 'package:shital_video_editor/pages/editor/widgets/audio_start_sheet.dart';
+import 'package:shital_video_editor/pages/export/export_page.dart';
+import 'package:shital_video_editor/controllers/export_controller.dart';
 import 'package:video_player/video_player.dart';
 
 class EditorController extends GetxController {
@@ -1398,14 +1399,21 @@ class EditorController extends GetxController {
 
       logger.info('EXPORT: Navigating to EXPORT page +1 tick');
       try {
-        Get.toNamed(
-          Routes.EXPORT,
-          arguments: {
-            'command': command,
-            'outputPath': outputPath,
-            'videoDuration': afterExportVideoDuration
-          },
-        );
+        Get.put(ExportController(
+          command: command,
+          outputPath: outputPath,
+          videoDuration: afterExportVideoDuration,
+        ));
+        logger.info('EXPORT: Export controller put successfully');
+        Navigator.push(
+          Get.context!,
+          MaterialPageRoute(builder: (context) => ExportPage()),
+        ).then((_) {
+          logger.info('EXPORT: Export page popped');
+          if (Get.isRegistered<ExportController>()) {
+            Get.delete<ExportController>();
+          }
+        });
       } catch (e, stackTrace) {
         logger.info(
             'EXPORT: Navigation didnot gothrough to named $e $stackTrace ');
