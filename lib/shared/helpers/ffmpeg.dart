@@ -10,29 +10,81 @@ import 'package:shital_video_editor/shared/helpers/video.dart';
 import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:path_provider/path_provider.dart';
 
+// Future<String> registerFonts() async {
+//   logger.info('FFMPEG: Starting registerFonts()');
+//   try {
+//     const filename = 'CenturyGothic-Regular.ttf';
+//     logger.debug('FFMPEG: Loading font asset: fonts/$filename');
+//     var bytes = await rootBundle.load("fonts/$filename");
+
+//     String dir = (await getApplicationDocumentsDirectory()).path;
+//     final path = '$dir/$filename';
+//     logger.debug('FFMPEG: Application documents directory: $dir');
+
+//     final buffer = bytes.buffer;
+//     await File(path).writeAsBytes(
+//         buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
+//     logger.info('FFMPEG: Font written to local file: $path');
+
+//     File file = File('$dir/$filename');
+//     if (!file.existsSync()) {
+//       logger.error('FFMPEG: Font file does not exist after writing!');
+//     }
+
+//     logger.debug('FFMPEG: Setting FFmpegKit font directory list');
+//     // iOS doesn't support setFontDirectoryList, only set the font file path directly
+//     if (Platform.isIOS) {
+//       FFmpegKitConfig.setFontDirectoryList([file.parent.path]);
+//     } else {
+//       FFmpegKitConfig.setFontDirectoryList(
+//           ["/system/fonts", "/System/Library/Fonts", file.path]);
+//     }
+
+//     logger.info('FFMPEG: registerFonts() completed successfully');
+//     return file.path;
+//   } catch (e, stackTrace) {
+//     logger.error('FFMPEG: ERROR in registerFonts: $e');
+//     logger.error('FFMPEG: StackTrace: $stackTrace');
+//     rethrow;
+//   }
+// }
+
 Future<String> registerFonts() async {
   logger.info('FFMPEG: Starting registerFonts()');
   try {
     const filename = 'CenturyGothic-Regular.ttf';
-    logger.debug('FFMPEG: Loading font asset: fonts/$filename');
-    var bytes = await rootBundle.load("fonts/$filename");
 
+    // 1. Get the destination path first
     String dir = (await getApplicationDocumentsDirectory()).path;
     final path = '$dir/$filename';
     logger.debug('FFMPEG: Application documents directory: $dir');
 
+    final file = File(path);
+
+    // 2. FIX: Check if file already exists.
+
+    if (file.existsSync()) {
+      logger.info('FFMPEG: Font already exists at $path. Skipping write.');
+      // Ensure FFmpegKit knows where to find it
+      if (Platform.isIOS) {
+        FFmpegKitConfig.setFontDirectoryList([file.parent.path]);
+      }
+      return file.path;
+    }
+
+    // 3. Load asset only if file doesn't exist
+    logger.debug('FFMPEG: Loading font asset: fonts/$filename');
+    var bytes = await rootBundle.load("fonts/$filename");
+
     final buffer = bytes.buffer;
-    await File(path).writeAsBytes(
+
+    // 4. Write file
+    await file.writeAsBytes(
         buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes));
     logger.info('FFMPEG: Font written to local file: $path');
 
-    File file = File('$dir/$filename');
-    if (!file.existsSync()) {
-      logger.error('FFMPEG: Font file does not exist after writing!');
-    }
-
+    // 5. Configure FFmpegKit
     logger.debug('FFMPEG: Setting FFmpegKit font directory list');
-    // iOS doesn't support setFontDirectoryList, only set the font file path directly
     if (Platform.isIOS) {
       FFmpegKitConfig.setFontDirectoryList([file.parent.path]);
     } else {
