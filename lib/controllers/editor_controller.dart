@@ -1395,7 +1395,7 @@ class EditorController extends GetxController {
       logger.debug('EXPORT: Closing export bottom sheet');
 
       // Close the export bottom sheet
-      // Get.back();
+      Navigator.of(Get.context!).pop();
 
       logger.info('EXPORT: Navigating to EXPORT page +1 tick');
       try {

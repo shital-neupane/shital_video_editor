@@ -5,7 +5,6 @@ import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:ffmpeg_kit_flutter_new/session.dart';
 import 'package:ffmpeg_kit_flutter_new/statistics.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
-import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
 import 'package:shital_video_editor/shared/logger_service.dart';
 import 'package:saver_gallery/saver_gallery.dart';
 import 'package:get/get.dart';
@@ -50,12 +49,10 @@ class ExportController extends GetxController {
     super.onInit();
 
     try {
-      // Register fonts
-      logger.info('EXPORT_CTRL: Registering fonts...');
-      await registerFonts();
-      logger.info('EXPORT_CTRL: Fonts registered successfully');
+      // Start the export process after a small delay to allow navigation to settle
+      logger.info('EXPORT_CTRL: Waiting for navigation to settle...');
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      // Start the export process
       logger.info('EXPORT_CTRL: Starting _exportVideo()');
       _exportVideo();
     } catch (e, stackTrace) {
