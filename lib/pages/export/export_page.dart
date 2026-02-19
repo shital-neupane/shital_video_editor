@@ -32,7 +32,7 @@ class ExportPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    logger.error("went to editor page build context");
+    logger.info("went to export page build context");
     try {
       final controller = _exportController;
       return Obx(

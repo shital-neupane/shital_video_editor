@@ -1393,21 +1393,24 @@ class EditorController extends GetxController {
       printWrapped('Will execute : ffmpeg $command');
 
       logger.debug('EXPORT: Closing export bottom sheet');
+    if(Get.context != null) {logger.info('CONTEXT AVAILABLE AT BEFORE POP');}else{logger.error("Context Deleted BEFORE POP");}
+      // Close the export bottom sheet      
+      Navigator.of(Get.context!).pop();//<-context editor page
 
-      // Close the export bottom sheet
-      Navigator.of(Get.context!).pop();
-
-      logger.info('EXPORT: Navigating to EXPORT page +1 tick');
+     if(Get.context != null) {logger.info('EXPORT: Navigating to EXPORT page +1 tick');}else{logger.error("Context Deleted");}
       try {
+
+        
         Get.put(ExportController(
           command: command,
           outputPath: outputPath,
           videoDuration: afterExportVideoDuration,
         ));
         logger.info('EXPORT: Export controller put successfully');
-        Navigator.push(
+
+       Navigator.push(
           Get.context!,
-          MaterialPageRoute(builder: (context) => ExportPage()),
+          MaterialPageRoute(builder: (context) => ExportPage())
         ).then((_) {
           logger.info('EXPORT: Export page popped');
           if (Get.isRegistered<ExportController>()) {
