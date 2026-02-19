@@ -1417,7 +1417,7 @@ class EditorController extends GetxController {
         logger.info('EXPORT: Export controller put successfully');
 
         Navigator.push(Get.context!,
-            MaterialPageRoute(builder: (context) => EditorPage())).then((_) {
+            MaterialPageRoute(builder: (context) => ExportPage())).then((_) {
           logger.info('EXPORT: Export page popped');
           if (Get.isRegistered<ExportController>()) {
             Get.delete<ExportController>();
