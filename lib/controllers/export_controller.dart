@@ -44,19 +44,37 @@ class ExportController extends GetxController {
   }
 
   @override
-  void onInit() async {
+  void onInit() {
     logger.info('EXPORT_CTRL: onInit() started');
     super.onInit();
 
+    Future.microtask(() => _startExportProcess());
+
+    // try {
+    //   // Start the export process after a small delay to allow navigation to settle
+    //   logger.info('EXPORT_CTRL: Waiting for navigation to settle...');
+    //   await Future.delayed(const Duration(milliseconds: 500));
+
+    //   logger.info('EXPORT_CTRL: Starting _exportVideo()');
+    //   _exportVideo();
+    // } catch (e, stackTrace) {
+    //   logger.error('EXPORT_CTRL: CRITICAL ERROR in onInit: $e');
+    //   logger.error('EXPORT_CTRL: StackTrace: $stackTrace');
+    //   errorExporting.value = true;
+    //   isExporting.value = false;
+    // }
+  }
+
+  Future<void> _startExportProcess() async {
     try {
-      // Start the export process after a small delay to allow navigation to settle
       logger.info('EXPORT_CTRL: Waiting for navigation to settle...');
-      await Future.delayed(const Duration(milliseconds: 500));
+      // Delay ensures the native iOS view is fully loaded before FFmpeg starts
+      await Future.delayed(const Duration(milliseconds: 600));
 
       logger.info('EXPORT_CTRL: Starting _exportVideo()');
-      _exportVideo();
+      await _exportVideo();
     } catch (e, stackTrace) {
-      logger.error('EXPORT_CTRL: CRITICAL ERROR in onInit: $e');
+      logger.error('EXPORT_CTRL: CRITICAL ERROR: $e');
       logger.error('EXPORT_CTRL: StackTrace: $stackTrace');
       errorExporting.value = true;
       isExporting.value = false;

@@ -9,6 +9,7 @@ import 'package:flutter/rendering.dart';
 import 'package:shital_video_editor/models/export_options.dart';
 import 'package:shital_video_editor/models/project.dart';
 import 'package:shital_video_editor/models/text.dart';
+import 'package:shital_video_editor/pages/editor/editor_page.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
 import 'package:shital_video_editor/shared/helpers/files.dart';
@@ -1393,25 +1394,30 @@ class EditorController extends GetxController {
       printWrapped('Will execute : ffmpeg $command');
 
       logger.debug('EXPORT: Closing export bottom sheet');
-    if(Get.context != null) {logger.info('CONTEXT AVAILABLE AT BEFORE POP');}else{logger.error("Context Deleted BEFORE POP");}
-      // Close the export bottom sheet      
-      Navigator.of(Get.context!).pop();//<-context editor page
+      if (Get.context != null) {
+        logger.info('CONTEXT AVAILABLE AT BEFORE POP');
+      } else {
+        logger.error("Context Deleted BEFORE POP");
+      }
+      // Close the export bottom sheet
+      Navigator.of(Get.context!).pop(); //<-context editor page
 
-     if(Get.context != null) {logger.info('EXPORT: Navigating to EXPORT page +1 tick');}else{logger.error("Context Deleted");}
+      if (Get.context != null) {
+        logger.info('EXPORT: Navigating to EXPORT page +1 tick');
+      } else {
+        logger.error("Context Deleted");
+      }
       try {
-
-        
         Get.put(ExportController(
           command: command,
           outputPath: outputPath,
           videoDuration: afterExportVideoDuration,
         ));
+
         logger.info('EXPORT: Export controller put successfully');
 
-       Navigator.push(
-          Get.context!,
-          MaterialPageRoute(builder: (context) => ExportPage())
-        ).then((_) {
+        Navigator.push(Get.context!,
+            MaterialPageRoute(builder: (context) => EditorPage())).then((_) {
           logger.info('EXPORT: Export page popped');
           if (Get.isRegistered<ExportController>()) {
             Get.delete<ExportController>();
