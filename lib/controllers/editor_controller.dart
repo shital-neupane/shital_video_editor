@@ -10,6 +10,7 @@ import 'package:shital_video_editor/models/export_options.dart';
 import 'package:shital_video_editor/models/project.dart';
 import 'package:shital_video_editor/models/text.dart';
 import 'package:shital_video_editor/pages/editor/editor_page.dart';
+import 'package:shital_video_editor/routes/app_pages.dart';
 import 'package:shital_video_editor/shared/core/constants.dart';
 import 'package:shital_video_editor/shared/helpers/ffmpeg.dart';
 import 'package:shital_video_editor/shared/helpers/files.dart';
@@ -1408,21 +1409,29 @@ class EditorController extends GetxController {
         logger.error("Context Deleted");
       }
       try {
-        Get.put(ExportController(
-          command: command,
-          outputPath: outputPath,
-          videoDuration: afterExportVideoDuration,
-        ));
+        Get.toNamed(
+          Routes.EXPORT,
+          arguments: {
+            'command': command,
+            'outputPath': outputPath,
+            'videoDuration': afterExportVideoDuration
+          },
+        );
+        // Get.put(ExportController(
+        //   command: command,
+        //   outputPath: outputPath,
+        //   videoDuration: afterExportVideoDuration,
+        // ));
 
-        logger.info('EXPORT: Export controller put successfully');
+        // logger.info('EXPORT: Export controller put successfully');
 
-        Navigator.push(Get.context!,
-            MaterialPageRoute(builder: (context) => ExportPage())).then((_) {
-          logger.info('EXPORT: Export page popped');
-          if (Get.isRegistered<ExportController>()) {
-            Get.delete<ExportController>();
-          }
-        });
+        // Navigator.push(Get.context!,
+        //     MaterialPageRoute(builder: (context) => ExportPage())).then((_) {
+        //   logger.info('EXPORT: Export page popped');
+        //   if (Get.isRegistered<ExportController>()) {
+        //     Get.delete<ExportController>();
+        //   }
+        // });
       } catch (e, stackTrace) {
         logger.info(
             'EXPORT: Navigation didnot gothrough to named $e $stackTrace ');

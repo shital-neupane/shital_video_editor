@@ -20,6 +20,8 @@ import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
 class EditorPage extends GetView<EditorController> {
+  final bool testing_mode = false;
+
   EditorPage({super.key});
 
   @override
@@ -111,15 +113,17 @@ class EditorPage extends GetView<EditorController> {
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                IconButton(
-                  icon: Icon(Icons.bug_report, size: 26.0),
-                  color: Color(0xFF666666),
-                  onPressed: () {
-                    Get.toNamed('/logs_viewer');
-                  },
-                  splashRadius: 20.0,
-                  tooltip: 'View Debug Logs',
-                ),
+                testing_mode
+                    ? IconButton(
+                        icon: Icon(Icons.bug_report, size: 26.0),
+                        color: Color(0xFF666666),
+                        onPressed: () {
+                          Get.toNamed('/logs_viewer');
+                        },
+                        splashRadius: 20.0,
+                        tooltip: 'View Debug Logs',
+                      )
+                    : SizedBox(),
                 IconButton(
                   icon: Icon(Icons.arrow_forward, size: 26.0),
                   color: Color(0xFF0D47A1),
